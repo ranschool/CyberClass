@@ -1,3 +1,5 @@
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
 const navigation = document.querySelector('#navigation');
 const content = document.querySelector('#content');
 const count = document.querySelector('#page-count');
@@ -64,11 +66,18 @@ function inline(text) {
 
 function markdownToHtml(markdown) {
   const lines = markdown.replace(/\r/g, '').split('\n');
-  let result = '', list = null, code = false, codeLines = [], direction = null;
+  let result = '', list = null, code = false, codeLanguage = '', codeLines = [], direction = null;
   const closeList = () => { if (list) { result += `</${list}>`; list = null; } };
   const closeDirection = () => { if (direction) { result += '</div>'; direction = null; } };
   for (const line of lines) {
-    if (line.startsWith('```')) { if (code) { result += `<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`; code = false; codeLines = []; } else { closeList(); code = true; } continue; }
+    if (line.startsWith('```')) {
+      if (code) {
+        const source = escapeHtml(codeLines.join('\n'));
+        result += codeLanguage === 'mermaid' ? `<pre class="mermaid">${source}</pre>` : `<pre><code>${source}</code></pre>`;
+        code = false; codeLanguage = ''; codeLines = [];
+      } else { closeList(); code = true; codeLanguage = line.slice(3).trim().toLowerCase(); }
+      continue;
+    }
     if (code) { codeLines.push(line); continue; }
     const directionStart = line.match(/^:::(rtl|ltr)\s*$/i);
     if (directionStart) { closeList(); closeDirection(); direction = directionStart[1].toLowerCase(); result += `<div class="markdown-direction" dir="${direction}">`; continue; }
@@ -82,6 +91,14 @@ function markdownToHtml(markdown) {
     else result += `<p>${inline(line)}</p>`;
   }
   closeList(); closeDirection(); return result;
+}
+
+async function renderMermaid() {
+  const diagrams = content.querySelectorAll('.mermaid');
+  if (!diagrams.length) return;
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: document.body.classList.contains('light-theme') ? 'default' : 'dark', flowchart: { useMaxWidth: true } });
+  try { await mermaid.run({ nodes: diagrams, suppressErrors: true }); }
+  catch { diagrams.forEach(diagram => diagram.classList.add('mermaid-error')); }
 }
 
 function renderNavigation() {
@@ -131,7 +148,7 @@ async function renderCurrentPage() {
   sidebar.classList.remove('open'); menuButton.setAttribute('aria-expanded', 'false');
   if (!page) { content.innerHTML = `<article class="article empty-state"><h1>${escapeHtml(text('empty_title'))}</h1><p>${escapeHtml(text('empty_description'))}</p></article>`; return; }
   content.innerHTML = `<article class="article"><p>${escapeHtml(text('loading_page'))}</p></article>`;
-  try { const response = await fetch(page.file); if (!response.ok) throw new Error(); const html = markdownToHtml(await response.text()); const title = html.match(/<h1>(.*?)<\/h1>/)?.[1] || escapeHtml(page.title); content.innerHTML = `<article class="article"><header class="article-header"><h1>${title}</h1></header>${html.replace(/<h1>.*?<\/h1>/, '')}</article>`; content.focus(); }
+  try { const response = await fetch(page.file); if (!response.ok) throw new Error(); const html = markdownToHtml(await response.text()); const title = html.match(/<h1>(.*?)<\/h1>/)?.[1] || escapeHtml(page.title); content.innerHTML = `<article class="article"><header class="article-header"><h1>${title}</h1></header>${html.replace(/<h1>.*?<\/h1>/, '')}</article>`; await renderMermaid(); content.focus(); }
   catch {
     const description = escapeHtml(text('load_error_description')).replace('{file}', `<code>${escapeHtml(page.file)}</code>`);
     content.innerHTML = `<article class="article empty-state"><h1>${escapeHtml(text('load_error_title'))}</h1><p>${description}</p></article>`;
@@ -152,5 +169,5 @@ async function init() {
 }
 menuButton.addEventListener('click', () => { const open = sidebar.classList.toggle('open'); menuButton.setAttribute('aria-expanded', String(open)); });
 try { setTheme(localStorage.getItem('site-theme') || 'dark'); } catch { setTheme('dark'); }
-themeToggle.addEventListener('click', () => setTheme(document.body.classList.contains('light-theme') ? 'dark' : 'light'));
+themeToggle.addEventListener('click', () => { setTheme(document.body.classList.contains('light-theme') ? 'dark' : 'light'); renderCurrentPage(); });
 window.addEventListener('hashchange', renderCurrentPage); init();

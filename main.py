@@ -107,7 +107,7 @@ class CyberLearnEditor(QMainWindow):
         self.direction_combo = QComboBox(); self.direction_combo.addItem("RTL — ימין לשמאל", Qt.RightToLeft); self.direction_combo.addItem("LTR — שמאל לימין", Qt.LeftToRight); tools.addWidget(self.direction_combo)
         tools.addWidget(QLabel("סוג טקסט:"))
         self.heading_combo = QComboBox(); self.heading_combo.addItem("בחרו סגנון"); self.heading_combo.addItem("כותרת 1", "# "); self.heading_combo.addItem("כותרת 2", "## "); self.heading_combo.addItem("כותרת 3", "### "); self.heading_combo.addItem("טקסט רגיל", ""); tools.addWidget(self.heading_combo)
-        for label, callback in [("B מודגש", lambda: self.wrap("**", "**")), ("I נטוי", lambda: self.wrap("*", "*")), ("• רשימה", lambda: self.prefix("- ")), ("1. רשימה", lambda: self.prefix("1. ")), ("ציטוט", lambda: self.prefix("> ")), ("קישור", self.insert_link), ("תמונה", self.image_library_dialog), ("קו מפריד", self.insert_horizontal_rule), ("באתר RTL", lambda: self.wrap_website_direction("rtl")), ("באתר LTR", lambda: self.wrap_website_direction("ltr")), ("קוד", lambda: self.wrap("`", "`")), ("בלוק קוד", self.code_block)]:
+        for label, callback in [("B מודגש", lambda: self.wrap("**", "**")), ("I נטוי", lambda: self.wrap("*", "*")), ("• רשימה", lambda: self.prefix("- ")), ("1. רשימה", lambda: self.prefix("1. ")), ("ציטוט", lambda: self.prefix("> ")), ("קישור", self.insert_link), ("תמונה", self.image_library_dialog), ("קו מפריד", self.insert_horizontal_rule), ("באתר RTL", lambda: self.wrap_website_direction("rtl")), ("באתר LTR", lambda: self.wrap_website_direction("ltr")), ("Mermaid", self.mermaid_block), ("קוד", lambda: self.wrap("`", "`")), ("בלוק קוד", self.code_block)]:
             button = QPushButton(label); button.clicked.connect(callback); tools.addWidget(button)
         tools.addStretch(); layout.addWidget(toolbar)
         self.body = QPlainTextEdit(); self.body.setPlaceholderText("כתבו כאן את תוכן השיעור ב-Markdown…"); self.direction_combo.currentIndexChanged.connect(self.set_body_direction); self.heading_combo.currentIndexChanged.connect(self.apply_heading); self.set_body_direction(); layout.addWidget(self.body, 1)
@@ -488,6 +488,9 @@ class CyberLearnEditor(QMainWindow):
         if not cursor.hasSelection(): cursor.select(QTextCursor.BlockUnderCursor)
         selected = cursor.selectedText().replace("\u2029", "\n").strip()
         cursor.insertText(f":::{direction}\n{selected or 'טקסט'}\n:::")
+    def mermaid_block(self) -> None:
+        cursor = self.body.textCursor()
+        cursor.insertText("```mermaid\nflowchart TD\n    A[התחלה] --> B[שלב הבא]\n```")
     def code_block(self) -> None:
         cursor = self.body.textCursor(); cursor.insertText(f"```\n{cursor.selectedText() or 'כתבו כאן קוד'}\n```")
     def preview(self) -> None:
