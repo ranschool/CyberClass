@@ -73,6 +73,8 @@ Registry
 
 בחרו את האפשרותDefaults .
 
+![page_006_img_01](/assets/images/page_006_img_01.png)
+
 4 . שנו את גודל הפונט ל- 42 .
 
 ---
