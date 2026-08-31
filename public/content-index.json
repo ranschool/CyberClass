@@ -46,5 +46,85 @@
     "path": "Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
     "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
     "order": 6
+  },
+  {
+    "title": "מחרוזות",
+    "slug": "Python/פרק 4 - מחרוזות/מחרוזות",
+    "folder": "Python / פרק 4 - מחרוזות",
+    "path": "Python/פרק 4 - מחרוזות/מחרוזות.md",
+    "file": "content/Python/פרק 4 - מחרוזות/מחרוזות.md",
+    "order": 7
+  },
+  {
+    "title": "פונקציות",
+    "slug": "Python/פרק 5 - פונקציות/פונקציות",
+    "folder": "Python / פרק 5 - פונקציות",
+    "path": "Python/פרק 5 - פונקציות/פונקציות.md",
+    "file": "content/Python/פרק 5 - פונקציות/פונקציות.md",
+    "order": 8
+  },
+  {
+    "title": "List, Tuple",
+    "slug": "Python/פרק 6 - List , Tuple/listtuple",
+    "folder": "Python / פרק 6 - List , Tuple",
+    "path": "Python/פרק 6 - List , Tuple/listtuple.md",
+    "file": "content/Python/פרק 6 - List , Tuple/listtuple.md",
+    "order": 9
+  },
+  {
+    "title": "כתיבת קוד נכונה",
+    "slug": "Python/פרק 7 - כתיבת קוד נכונה/קודנכון",
+    "folder": "Python / פרק 7 - כתיבת קוד נכונה",
+    "path": "Python/פרק 7 - כתיבת קוד נכונה/קודנכון.md",
+    "file": "content/Python/פרק 7 - כתיבת קוד נכונה/קודנכון.md",
+    "order": 10
+  },
+  {
+    "title": "קבצים ופרמטרים לסקריפטים",
+    "slug": "Python/פרק 8 - קבצים ופרמטרים לסקריפטים/קבצים",
+    "folder": "Python / פרק 8 - קבצים ופרמטרים לסקריפטים",
+    "path": "Python/פרק 8 - קבצים ופרמטרים לסקריפטים/קבצים.md",
+    "file": "content/Python/פרק 8 - קבצים ופרמטרים לסקריפטים/קבצים.md",
+    "order": 11
+  },
+  {
+    "title": "Exceptions",
+    "slug": "Python/פרק 9 - Exceptions/exceptions",
+    "folder": "Python / פרק 9 - Exceptions",
+    "path": "Python/פרק 9 - Exceptions/exceptions.md",
+    "file": "content/Python/פרק 9 - Exceptions/exceptions.md",
+    "order": 12
+  },
+  {
+    "title": "תכנות מונחה עצמים – OOP",
+    "slug": "Python/פרק 10 - תכנות מונחה עצמים – OOP/oop",
+    "folder": "Python / פרק 10 - תכנות מונחה עצמים – OOP",
+    "path": "Python/פרק 10 - תכנות מונחה עצמים – OOP/oop.md",
+    "file": "content/Python/פרק 10 - תכנות מונחה עצמים – OOP/oop.md",
+    "order": 13
+  },
+  {
+    "title": "OOP מתקדם – תכנות משחקים באמצעות PyGame",
+    "slug": "Python/פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame/oopgames",
+    "folder": "Python / פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame",
+    "path": "Python/פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame/oopgames.md",
+    "file": "content/Python/פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame/oopgames.md",
+    "order": 14
+  },
+  {
+    "title": "מילונים",
+    "slug": "Python/פרק 12 - מילונים/מילונים",
+    "folder": "Python / פרק 12 - מילונים",
+    "path": "Python/פרק 12 - מילונים/מילונים.md",
+    "file": "content/Python/פרק 12 - מילונים/מילונים.md",
+    "order": 15
+  },
+  {
+    "title": "List Comprehensions, Magic Functions",
+    "slug": "Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions",
+    "folder": "Python / פרק 13 - List Comprehensions, Magic Functions",
+    "path": "Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions.md",
+    "file": "content/Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions.md",
+    "order": 16
   }
 ]
