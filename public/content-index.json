@@ -126,5 +126,13 @@
     "path": "Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions.md",
     "file": "content/Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions.md",
     "order": 16
+  },
+  {
+    "title": "כלי דיאגנוסטיקה Sysinternals",
+    "slug": "OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals",
+    "folder": "OS / פרק 1 - כלי דיאגנוסטיקה Sysinternals",
+    "path": "OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals.md",
+    "file": "content/OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals.md",
+    "order": 17
   }
 ]
