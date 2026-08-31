@@ -22,5 +22,29 @@
     "path": "Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2.md",
     "file": "content/Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2.md",
     "order": 3
+  },
+  {
+    "title": "משתנים",
+    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים",
+    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
+    "path": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
+    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
+    "order": 4
+  },
+  {
+    "title": "תנאים",
+    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים",
+    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
+    "path": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
+    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
+    "order": 5
+  },
+  {
+    "title": "לולאות",
+    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/לולאות",
+    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
+    "path": "Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
+    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
+    "order": 6
   }
 ]
