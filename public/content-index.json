@@ -1,0 +1,26 @@
+[
+  {
+    "title": "תיכון מיתרים",
+    "slug": "meitarim",
+    "folder": "כללי",
+    "path": "meitarim.md",
+    "file": "content/meitarim.md",
+    "order": 1
+  },
+  {
+    "title": "מבוא ללימוד פייתון",
+    "slug": "Python/פרק 1 - מבוא ללימוד פייתון/chapter1",
+    "folder": "Python / פרק 1 - מבוא ללימוד פייתון",
+    "path": "Python/פרק 1 - מבוא ללימוד פייתון/chapter1.md",
+    "file": "content/Python/פרק 1 - מבוא ללימוד פייתון/chapter1.md",
+    "order": 2
+  },
+  {
+    "title": "סביבת עבודה Visual Studio code",
+    "slug": "Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2",
+    "folder": "Python / פרק 2 - סביבת עבודה Visual Studio code",
+    "path": "Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2.md",
+    "file": "content/Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2.md",
+    "order": 3
+  }
+]
