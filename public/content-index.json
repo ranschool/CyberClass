@@ -134,5 +134,13 @@
     "path": "OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals.md",
     "file": "content/OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals.md",
     "order": 17
+  },
+  {
+    "title": "פרק 2 - מחקר אזורי הזיכרון של תוכנה",
+    "slug": "OS/memory",
+    "folder": "OS",
+    "path": "OS/memory.md",
+    "file": "content/OS/memory.md",
+    "order": 18
   }
 ]
