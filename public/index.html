@@ -4,11 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#081421" />
+    <meta name="description" content="אתר לימודי" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LearningSite" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <title id="site-title">LearningSite | למידה חכמה</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Rubik:wght@500;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="assets/styles.css?v=font-settings-4" />
+    <script src="assets/vendor/markdown-it.min.js"></script>
+    <script src="assets/vendor/purify.min.js"></script>
+    <script src="assets/vendor/highlight.min.js"></script>
+    <script src="assets/vendor/mermaid.min.js"></script>
   </head>
   <body>
     <div class="background-glow glow-one"></div>
@@ -30,12 +39,14 @@
             <p id="learning-path-label">מסלול הלמידה</p>
             <small id="page-count">טוען תכנים…</small>
           </div>
+          <div class="nav-tree-actions" aria-label="פעולות עץ התוכן"><button type="button" id="expand-all">פתח הכול</button><button type="button" id="collapse-all">סגור הכול</button></div>
+          <div class="search-wrap"><label class="sr-only" for="site-search">חיפוש באתר</label><input id="site-search" type="search" placeholder="חיפוש בשיעורים…" autocomplete="off" /><div id="search-results" hidden></div></div>
           <nav id="navigation" aria-label="ניווט בתכני הלמידה"></nav>
         </aside>
 
         <main id="content" class="content" tabindex="-1" aria-live="polite"></main>
       </div>
     </div>
-    <script type="module" src="assets/app.js"></script>
+    <script type="module" src="assets/app.js?v=font-settings-4"></script>
   </body>
 </html>

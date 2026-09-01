@@ -1,173 +1,26 @@
-import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-
-const navigation = document.querySelector('#navigation');
-const content = document.querySelector('#content');
-const count = document.querySelector('#page-count');
-const menuButton = document.querySelector('.menu-button');
-const sidebar = document.querySelector('#sidebar');
-const themeToggle = document.querySelector('#theme-toggle');
-
-let pages = [];
-const defaultTexts = {
-  site_title: 'LearningSite | למידה חכמה', brand_prefix: 'Learning', brand_accent: 'Site', brand_home_label: 'דף הבית של LearningSite',
-  tagline: 'הנדסת תוכנה וסייבר · לומדים, מתרגלים, מבינים', menu_label: 'תכנים ☰', theme_light_label: '☀ מצב בהיר', theme_dark_label: '🌙 מצב כהה', learning_path_label: 'מסלול הלמידה', navigation_label: 'ניווט בתכני הלמידה', loading_content: 'טוען תכנים…',
-  page_count: '{count} עמודים זמינים', empty_title: 'עוד אין תכנים', empty_description: 'צרו את העמוד הראשון דרך תוכנת העורך. היא תעדכן את האינדקס אוטומטית.',
-  loading_page: 'טוען את השיעור…', load_error_title: 'לא הצלחנו לטעון את העמוד', load_error_description: 'ודאו שהקובץ {file} קיים, ושהאתר מופעל דרך שרת מקומי.',
-  missing_index_title: 'חסר קובץ אינדקס', missing_index_description: 'פתחו את תוכנת העורך ושמרו עמוד כדי ליצור את האינדקס אוטומטית.',
-};
-let siteTexts = { ...defaultTexts };
-
-function escapeHtml(value) {
-  return value.replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[char]);
-}
-
-function setTheme(theme) {
-  const light = theme === 'light';
-  document.body.classList.toggle('light-theme', light);
-  themeToggle.setAttribute('aria-pressed', String(light));
-  themeToggle.textContent = text(light ? 'theme_dark_label' : 'theme_light_label');
-  try { localStorage.setItem('site-theme', light ? 'light' : 'dark'); } catch { /* Storage can be unavailable. */ }
-}
-
-function text(key, replacements = {}) {
-  return Object.entries(replacements).reduce((value, [name, replacement]) => value.replaceAll(`{${name}}`, replacement), siteTexts[key] ?? defaultTexts[key] ?? '');
-}
-
-function applySiteTexts() {
-  document.title = text('site_title');
-  document.querySelector('#site-title').textContent = text('site_title');
-  document.querySelector('#brand-home').setAttribute('aria-label', text('brand_home_label'));
-  document.querySelector('#brand-name').innerHTML = `${escapeHtml(text('brand_prefix'))}<span>${escapeHtml(text('brand_accent'))}</span>`;
-  document.querySelector('#tagline').textContent = text('tagline');
-  menuButton.textContent = text('menu_label');
-  themeToggle.textContent = text(document.body.classList.contains('light-theme') ? 'theme_dark_label' : 'theme_light_label');
-  document.querySelector('#learning-path-label').textContent = text('learning_path_label');
-  navigation.setAttribute('aria-label', text('navigation_label'));
-  count.textContent = text('loading_content');
-}
-
-async function loadSiteTexts() {
-  try {
-    const response = await fetch('site-texts.json');
-    if (!response.ok) throw new Error();
-    siteTexts = { ...defaultTexts, ...await response.json() };
-  } catch { siteTexts = { ...defaultTexts }; }
-  applySiteTexts();
-}
-
-function inline(text) {
-  return escapeHtml(text)
-    .replace(/!\[([^\]]*)\]\(([^ )]+)\)/g, '<img src="$2" alt="$1" loading="lazy">')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\(([^ )]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
-}
-
-function markdownToHtml(markdown) {
-  const lines = markdown.replace(/\r/g, '').split('\n');
-  let result = '', list = null, code = false, codeLanguage = '', codeLines = [], direction = null;
-  const closeList = () => { if (list) { result += `</${list}>`; list = null; } };
-  const closeDirection = () => { if (direction) { result += '</div>'; direction = null; } };
-  for (const line of lines) {
-    if (line.startsWith('```')) {
-      if (code) {
-        const source = escapeHtml(codeLines.join('\n'));
-        result += codeLanguage === 'mermaid' ? `<pre class="mermaid">${source}</pre>` : `<pre><code>${source}</code></pre>`;
-        code = false; codeLanguage = ''; codeLines = [];
-      } else { closeList(); code = true; codeLanguage = line.slice(3).trim().toLowerCase(); }
-      continue;
-    }
-    if (code) { codeLines.push(line); continue; }
-    const directionStart = line.match(/^:::(rtl|ltr)\s*$/i);
-    if (directionStart) { closeList(); closeDirection(); direction = directionStart[1].toLowerCase(); result += `<div class="markdown-direction" dir="${direction}">`; continue; }
-    if (line.trim() === ':::') { closeList(); closeDirection(); continue; }
-    const heading = line.match(/^(#{1,3})\s+(.+)$/); const unordered = line.match(/^[-*+]\s+(.+)$/); const ordered = line.match(/^\d+\.\s+(.+)$/);
-    if (heading) { closeList(); const level = heading[1].length; result += `<h${level}>${inline(heading[2])}</h${level}>`; continue; }
-    if (unordered || ordered) { const kind = unordered ? 'ul' : 'ol'; if (list !== kind) { closeList(); result += `<${kind}>`; list = kind; } result += `<li>${inline((unordered || ordered)[1])}</li>`; continue; }
-    closeList(); if (!line.trim()) continue;
-    if (line.startsWith('> ')) result += `<blockquote>${inline(line.slice(2))}</blockquote>`;
-    else if (line === '---') result += '<hr>';
-    else result += `<p>${inline(line)}</p>`;
-  }
-  closeList(); closeDirection(); return result;
-}
-
-async function renderMermaid() {
-  const diagrams = content.querySelectorAll('.mermaid');
-  if (!diagrams.length) return;
-  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: document.body.classList.contains('light-theme') ? 'default' : 'dark', flowchart: { useMaxWidth: true } });
-  try { await mermaid.run({ nodes: diagrams, suppressErrors: true }); }
-  catch { diagrams.forEach(diagram => diagram.classList.add('mermaid-error')); }
-}
-
-function renderNavigation() {
-  const tree = { children: new Map(), pages: [] };
-  pages.forEach(page => {
-    const folders = page.slug.split('/').slice(0, -1);
-    let node = tree;
-    folders.forEach(folder => {
-      if (!node.children.has(folder)) node.children.set(folder, { children: new Map(), pages: [] });
-      node = node.children.get(folder);
-    });
-    node.pages.push(page);
-  });
-
-  const pageLink = page => `<a class="nav-link" href="#/${encodeURIComponent(page.slug)}" data-slug="${escapeHtml(page.slug)}">${escapeHtml(page.title)}</a>`;
-  const firstOrder = node => Math.min(
-    ...node.pages.map(page => page.order),
-    ...[...node.children.values()].map(firstOrder),
-    Number.POSITIVE_INFINITY,
-  );
-  const branch = (node, depth = 0, lineage = []) => {
-    const entries = [
-      ...[...node.children].map(([name, child]) => ({ type: 'folder', name, child, order: firstOrder(child) })),
-      ...node.pages.map(page => ({ type: 'page', page, order: page.order })),
-    ].sort((first, second) => first.order - second.order);
-    return entries.map(entry => {
-      if (entry.type === 'page') return pageLink(entry.page);
-      const currentLineage = [...lineage, entry.name];
-      const id = `topic-${encodeURIComponent(currentLineage.join('/')).replace(/%/g, '_')}`;
-      const inner = branch(entry.child, depth + 1, currentLineage);
-      return `<section class="nav-group depth-${depth}"><button class="nav-group-title" type="button" aria-expanded="true" aria-controls="${id}"><span class="topic-chevron">⌄</span>${escapeHtml(entry.name)}</button><div class="nav-group-children" id="${id}">${inner}</div></section>`;
-    }).join('');
-  };
-
-  navigation.innerHTML = branch(tree);
-  navigation.querySelectorAll('.nav-group-title').forEach(button => button.addEventListener('click', () => {
-    const expanded = button.getAttribute('aria-expanded') === 'true';
-    button.setAttribute('aria-expanded', String(!expanded));
-    document.getElementById(button.getAttribute('aria-controls')).hidden = expanded;
-  }));
-}
-
-async function renderCurrentPage() {
-  const slug = decodeURIComponent(location.hash.replace(/^#\/?/, '')) || pages[0]?.slug;
-  const page = pages.find(item => item.slug === slug) || pages[0];
-  document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.slug === page?.slug));
-  sidebar.classList.remove('open'); menuButton.setAttribute('aria-expanded', 'false');
-  if (!page) { content.innerHTML = `<article class="article empty-state"><h1>${escapeHtml(text('empty_title'))}</h1><p>${escapeHtml(text('empty_description'))}</p></article>`; return; }
-  content.innerHTML = `<article class="article"><p>${escapeHtml(text('loading_page'))}</p></article>`;
-  try { const response = await fetch(page.file); if (!response.ok) throw new Error(); const html = markdownToHtml(await response.text()); const title = html.match(/<h1>(.*?)<\/h1>/)?.[1] || escapeHtml(page.title); content.innerHTML = `<article class="article"><header class="article-header"><h1>${title}</h1></header>${html.replace(/<h1>.*?<\/h1>/, '')}</article>`; await renderMermaid(); content.focus(); }
-  catch {
-    const description = escapeHtml(text('load_error_description')).replace('{file}', `<code>${escapeHtml(page.file)}</code>`);
-    content.innerHTML = `<article class="article empty-state"><h1>${escapeHtml(text('load_error_title'))}</h1><p>${description}</p></article>`;
-  }
-}
-
-async function init() {
-  await loadSiteTexts();
-  try {
-    const response = await fetch('content-index.json');
-    const index = await response.json();
-    pages = index
-      .map((page, indexPosition) => ({ ...page, order: Number.isFinite(Number(page.order)) ? Number(page.order) : indexPosition + 1, indexPosition }))
-      .sort((first, second) => first.order - second.order || first.indexPosition - second.indexPosition);
-    count.textContent = text('page_count', { count: pages.length }); renderNavigation(); await renderCurrentPage();
-  }
-  catch { content.innerHTML = `<article class="article empty-state"><h1>${escapeHtml(text('missing_index_title'))}</h1><p>${escapeHtml(text('missing_index_description'))}</p></article>`; }
-}
-menuButton.addEventListener('click', () => { const open = sidebar.classList.toggle('open'); menuButton.setAttribute('aria-expanded', String(open)); });
-try { setTheme(localStorage.getItem('site-theme') || 'dark'); } catch { setTheme('dark'); }
-themeToggle.addEventListener('click', () => { setTheme(document.body.classList.contains('light-theme') ? 'dark' : 'light'); renderCurrentPage(); });
-window.addEventListener('hashchange', renderCurrentPage); init();
+const $ = s => document.querySelector(s);
+const navigation = $('#navigation'), content = $('#content'), count = $('#page-count'), sidebar = $('#sidebar'), menuButton = $('.menu-button'), themeToggle = $('#theme-toggle'), searchInput = $('#site-search'), searchResults = $('#search-results'), expandAllButton = $('#expand-all'), collapseAllButton = $('#collapse-all');
+let pages = [], currentPage = null, source = '', texts = {};
+const MarkdownIt = window.markdownit, DOMPurify = window.DOMPurify, hljs = window.hljs, mermaid = window.mermaid;
+const defaults = {site_title:'LearningSite | למידה חכמה',loading_page:'טוען את השיעור…',missing_index_title:'חסר קובץ אינדקס',missing_index_description:'פתחו את תוכנת העורך ושמרו עמוד כדי ליצור את האינדקס.'};
+function applyFontSettings(){const values={body:['font_size_body',18,10,96],h1:['font_size_h1',56,10,96],h2:['font_size_h2',29,10,96],h3:['font_size_h3',21,10,96],sidebar:['font_size_sidebar',16,10,96],'sidebar-heading':['font_size_sidebar_heading',18,10,96],'sidebar-spacing':['sidebar_spacing',4,0,24]};Object.entries(values).forEach(([name,[key,fallback,min,max]])=>{const size=Math.min(max,Math.max(min,Number(texts[key])||fallback));document.documentElement.style.setProperty(`--site-${name}${name==='sidebar-spacing'?'':'-font-size'}`,`${size}px`);});}
+const safeUrl = url => /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i.test(url) ? url : '#';
+const slugify = text => text.toLowerCase().trim().replace(/[^\p{L}\p{N}_\- ]/gu,'').replace(/\s+/g,'-');
+const md = new MarkdownIt({html:false,linkify:true,typographer:true,highlight(code, lang) { const known = lang && hljs.getLanguage(lang); const value = known ? hljs.highlight(code,{language:lang}).value : MarkdownIt().utils.escapeHtml(code); return `<pre><div class="code-toolbar"><span>${known ? lang : 'text'}</span><button type="button" class="copy-code" aria-label="העתקת קוד">העתקה</button></div><code class="hljs language-${lang || 'text'}">${value}</code></pre>`; }});
+md.renderer.rules.heading_open = (tokens,i) => { const id = slugify(tokens[i + 1]?.content || '') || `section-${i}`; tokens[i].attrSet('id',id); return `<${tokens[i].tag} id="${id}">`; };
+md.renderer.rules.link_open = (tokens,i,o,e,self) => { const href = safeUrl(tokens[i].attrGet('href') || ''); tokens[i].attrSet('href',href); if (/^https?:/i.test(href)) { tokens[i].attrSet('target','_blank'); tokens[i].attrSet('rel','noopener noreferrer'); } return self.renderToken(tokens,i,o); };
+md.renderer.rules.image = (tokens,i,o,e,self) => { tokens[i].attrSet('src',safeUrl(tokens[i].attrGet('src') || '')); tokens[i].attrSet('loading','lazy'); return self.renderToken(tokens,i,o); };
+function renderMarkdown(value) { const body = value.replace(/^---[\s\S]*?---\s*/u,'').replace(/^:::(note|tip|warning|danger|exercise)\s*$/gim,'<div class="callout $1" role="note">').replace(/^:::(rtl|ltr)\s*$/gim,'<div class="markdown-direction" dir="$1">').replace(/^:::\s*$/gm,'</div>'); return DOMPurify.sanitize(md.render(body),{ADD_ATTR:['target','rel','dir','aria-label'],ADD_TAGS:['button','div']}); }
+function pageUrl(page) { return `#/${encodeURIComponent(page.slug)}`; }
+function setTheme(theme, rerender=false) { const light = theme === 'light'; document.body.classList.toggle('light-theme',light); themeToggle.setAttribute('aria-pressed',String(light)); themeToggle.textContent = light ? '🌙 מצב כהה' : '☀ מצב בהיר'; try { localStorage.setItem('site-theme',theme); } catch {} if (rerender && source) renderArticle(source,false); }
+function toc() { const headings = [...content.querySelectorAll('h2,h3')]; return headings.length < 2 ? '' : `<nav class="toc" aria-label="תוכן עניינים"><strong>בעמוד זה</strong>${headings.map(h=>`<a class="toc-${h.tagName.toLowerCase()}" href="#${h.id}">${h.textContent}</a>`).join('')}</nav>`; }
+function bindArticle() { content.querySelectorAll('.copy-code').forEach(button => button.addEventListener('click',async()=>{ try { await navigator.clipboard.writeText(button.closest('pre').querySelector('code').innerText); button.textContent='הועתק ✓'; setTimeout(()=>button.textContent='העתקה',1300); } catch { button.textContent='לא ניתן להעתיק'; } })); }
+async function renderMermaid() { const diagrams = content.querySelectorAll('code.language-mermaid'); if (!diagrams.length) return; mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:document.body.classList.contains('light-theme')?'default':'dark'}); for (const code of diagrams) { try { const host=document.createElement('div'); host.className='mermaid'; host.textContent=code.textContent; code.closest('pre').replaceWith(host); await mermaid.run({nodes:[host]}); } catch { code.closest('pre')?.classList.add('mermaid-error'); } } }
+function breadcrumbs(page) { return `<nav class="breadcrumb" aria-label="פירורי לחם"><a href="#/">בית</a>${(page.category||[]).map(x=>`<span>›</span><span>${x}</span>`).join('')}<span>›</span><span aria-current="page">${page.title}</span></nav>`; }
+async function renderArticle(value, focus=true) { source=value; const html=renderMarkdown(value), title=(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)||[])[1]||currentPage.title, position=pages.findIndex(p=>p.slug===currentPage.slug), previous=pages[position-1], next=pages[position+1]; content.innerHTML=`<article class="article">${breadcrumbs(currentPage)}<header class="article-header"><h1>${title}</h1>${currentPage.description?`<p class="description">${currentPage.description}</p>`:''}</header><div class="article-body">${html.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i,'')}</div><div id="toc-anchor"></div><nav class="previous-next">${previous?`<a href="${pageUrl(previous)}">→ ${previous.title}</a>`:'<span></span>'}${next?`<a href="${pageUrl(next)}">${next.title} ←</a>`:''}</nav></article>`; $('#toc-anchor').replaceWith(toc()); bindArticle(); await renderMermaid(); if(focus) content.focus(); }
+function renderNav() { const root={folders:new Map(),pages:[],order:Infinity}, expanded=texts.navigation_default_expanded!=='false'; pages.forEach(page=>{let node=root;(page.category||[]).forEach((name,index)=>{const order=Number(page.category_orders?.[index])||9999;if(!node.folders.has(name))node.folders.set(name,{folders:new Map(),pages:[],order});node=node.folders.get(name);node.order=Math.min(node.order,order);});node.pages.push(page);}); const first=node=>Math.min(node.order??Infinity,...node.pages.map(page=>page.order||0),...[...node.folders.values()].map(first)); const branch=(node,depth=0,lineage=[])=>{const entries=[...[...node.folders].map(([name,child])=>({type:'folder',name,child,order:first(child)})),...node.pages.map(page=>({type:'page',page,order:page.order||0}))].sort((a,b)=>a.order-b.order);return entries.map(entry=>{if(entry.type==='page')return `<a class="nav-link depth-${depth}" href="${pageUrl(entry.page)}" data-slug="${entry.page.slug}">${entry.page.title}</a>`;const id=`nav-${lineage.concat(entry.name).map(slugify).join('-')}`;return `<section class="nav-group depth-${depth}"><button class="nav-group-title" type="button" aria-expanded="${expanded}" aria-controls="${id}"><span class="topic-chevron">⌄</span><span>${entry.name}</span></button><div class="nav-group-children" id="${id}"${expanded?'':' hidden'}>${branch(entry.child,depth+1,lineage.concat(entry.name))}</div></section>`;}).join('');}; navigation.innerHTML=branch(root); navigation.querySelectorAll('.nav-group-title').forEach(button=>button.addEventListener('click',()=>{const box=button.nextElementSibling,open=!box.hidden;box.hidden=open;button.setAttribute('aria-expanded',String(!open));})); }
+function renderSearch(q='') { q=q.trim().toLocaleLowerCase(); const found=q?pages.filter(p=>[p.title,p.description,...(p.tags||[]),p.searchContent||''].join(' ').toLocaleLowerCase().includes(q)).slice(0,12):[]; searchResults.innerHTML=found.map(p=>`<a href="${pageUrl(p)}"><strong>${p.title}</strong><small>${p.description||(p.tags||[]).join(', ')}</small></a>`).join(''); searchResults.hidden=!found.length; }
+function readRoute() { try{return decodeURIComponent(location.hash.replace(/^#\/?/,''));}catch{return '__invalid__';} }
+async function route() { const slug=readRoute(); currentPage=pages.find(p=>p.slug===slug)||(!slug?pages[0]:null); sidebar.classList.remove('open'); menuButton.setAttribute('aria-expanded','false'); document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active',a.dataset.slug===currentPage?.slug)); if(!currentPage){content.innerHTML='<article class="article empty-state"><h1>העמוד לא נמצא</h1><p>ייתכן שהכתובת שגויה או שהעמוד הוסר.</p><p><a href="#/">חזרה לעמוד הראשון</a> · <button type="button" id="go-back">חזרה</button></p></article>'; $('#go-back')?.addEventListener('click',()=>history.back());return;} content.innerHTML=`<article class="article"><p>${defaults.loading_page}</p></article>`; try {const response=await fetch(currentPage.file,{cache:'no-cache'});if(!response.ok)throw new Error();await renderArticle(await response.text());document.title=`${currentPage.title} | ${texts.site_title||'LearningSite'}`; $('meta[name="description"]').content=currentPage.description||'';}catch{content.innerHTML='<article class="article empty-state"><h1>לא הצלחנו לטעון את העמוד</h1><p>ודאו שהקובץ קיים ושהאתר מופעל דרך שרת מקומי.</p></article>';}}
+async function init(){try{const [indexResponse,textResponse,searchResponse]=await Promise.all([fetch('content-index.json'),fetch('site-texts.json?settings=font-settings-1',{cache:'no-store'}).catch(()=>null),fetch('search-index.json').catch(()=>null)]),raw=await indexResponse.json(); pages=(Array.isArray(raw)?raw:raw.pages||[]).map(page=>({...page,category:Array.isArray(page.category)?page.category:(page.folder&&page.folder!=='כללי'?page.folder.split(' / '):[])})).filter(p=>!p.draft).sort((a,b)=>(a.order||0)-(b.order||0));texts=textResponse?.ok?await textResponse.json():{};applyFontSettings();const search=searchResponse?.ok?await searchResponse.json():[];const lookup=new Map(search.map(x=>[x.slug,x.content]));pages.forEach(p=>p.searchContent=lookup.get(p.slug)||'');count.textContent=(texts.page_count||'{count} עמודים זמינים').replace('{count}',pages.length);renderNav();await route();}catch{content.innerHTML=`<article class="article empty-state"><h1>${defaults.missing_index_title}</h1><p>${defaults.missing_index_description}</p></article>`;}}
+function setAllGroups(expanded){navigation.querySelectorAll('.nav-group-title').forEach(button=>{button.setAttribute('aria-expanded',String(expanded));button.nextElementSibling.hidden=!expanded;});}menuButton.addEventListener('click',()=>{const open=sidebar.classList.toggle('open');menuButton.setAttribute('aria-expanded',String(open));});expandAllButton.addEventListener('click',()=>setAllGroups(true));collapseAllButton.addEventListener('click',()=>setAllGroups(false));themeToggle.addEventListener('click',()=>setTheme(document.body.classList.contains('light-theme')?'dark':'light',true));searchInput.addEventListener('input',e=>renderSearch(e.target.value));document.addEventListener('keydown',e=>{if(e.key==='Escape'){sidebar.classList.remove('open');searchResults.hidden=true;}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();searchInput.focus();}});window.addEventListener('hashchange',route);try{setTheme(localStorage.getItem('site-theme')||'dark');}catch{setTheme('dark');}if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});init();
