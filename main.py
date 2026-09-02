@@ -14,7 +14,7 @@ from editor.content import ContentRepository
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QTextBlockFormat, QTextCursor
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QSpinBox, QStatusBar, QTextBrowser, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QSpinBox, QStatusBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 ROOT_OPTION = "כללי (ללא תיקייה)"
 SITE_TEXT_DEFAULTS = {
@@ -50,30 +50,6 @@ SITE_TEXT_DEFAULTS = {
     "sidebar_spacing": "4",
     "navigation_default_expanded": "true",
 }
-
-
-class ReorderTreeWidget(QTreeWidget):
-    """Read-only navigation tree; ordering is managed through page metadata."""
-    def __init__(self, on_drop, parent=None) -> None:
-        super().__init__(parent); self.on_drop = on_drop
-        self.dragged_item: QTreeWidgetItem | None = None
-        self.setDragEnabled(False); self.setAcceptDrops(False); self.setDropIndicatorShown(False)
-        self.setDragDropMode(QAbstractItemView.NoDragDrop)
-
-    def startDrag(self, supported_actions) -> None:
-        self.dragged_item = self.currentItem()
-        super().startDrag(supported_actions)
-
-    def dropEvent(self, event) -> None:
-        source, target = self.dragged_item, self.itemAt(event.position().toPoint())
-        if source and target and source is not target:
-            rectangle = self.visualItemRect(target); y = event.position().y()
-            before = y < rectangle.center().y()
-            # Drag-and-drop is intentionally ordering-only: moving a folder into another
-            # folder made it look as if the source had disappeared from the tree.
-            self.on_drop(source, target, before, False)
-        self.dragged_item = None
-        event.accept()
 
 
 class CyberLearnEditor(QMainWindow):
@@ -112,7 +88,7 @@ class CyberLearnEditor(QMainWindow):
             QPushButton#details-toggle:hover{background:#16364d;color:white}
             QLabel{color:#d7e6ef}
             QLabel#section-title{color:#f4fbff;font-size:__SECTION_FONT_SIZE__px;font-weight:700} QLabel#muted{color:#94adbd}
-            QLineEdit,QPlainTextEdit,QComboBox,QTreeWidget,QTextBrowser{background:#081522;color:#f4f9fc;border:1px solid #2a4a62;border-radius:8px;padding:8px}
+            QLineEdit,QPlainTextEdit,QComboBox,QTreeWidget{background:#081522;color:#f4f9fc;border:1px solid #2a4a62;border-radius:8px;padding:8px}
             QLineEdit:focus,QPlainTextEdit:focus,QComboBox:focus,QTreeWidget:focus{border:2px solid #00bfe8;background:#0a1928}
             QPlainTextEdit{selection-background-color:#155c76} QTreeWidget{background:#091929;border:0;padding:5px}
             QTreeWidget::item{padding:7px 5px;border-radius:6px} QTreeWidget::item:hover{background:#123149} QTreeWidget::item:selected{background:#12516a;color:white}
@@ -150,7 +126,7 @@ class CyberLearnEditor(QMainWindow):
         order_buttons = QHBoxLayout(); up = QPushButton("↑ העלה"); down = QPushButton("↓ הורד"); up.clicked.connect(lambda: self.move_selected_in_order(-1)); down.clicked.connect(lambda: self.move_selected_in_order(1)); order_buttons.addWidget(up); order_buttons.addWidget(down); side.addLayout(order_buttons)
         button = QPushButton("✎ שינוי שם תיקייה"); button.setObjectName("subtle"); button.clicked.connect(self.rename_folder_dialog); side.addWidget(button)
         button = QPushButton("מחק פריט נבחר"); button.setObjectName("danger"); button.clicked.connect(self.delete_selected_tree_item); side.addWidget(button)
-        self.tree = ReorderTreeWidget(self.reorder_tree_item); self.tree.setHeaderHidden(True); self.tree.setSelectionMode(QAbstractItemView.ExtendedSelection); self.tree.setContextMenuPolicy(Qt.CustomContextMenu); self.tree.customContextMenuRequested.connect(self.show_tree_context_menu); self.tree.itemSelectionChanged.connect(self.open_selected)
+        self.tree = QTreeWidget(); self.tree.setHeaderHidden(True); self.tree.setSelectionMode(QAbstractItemView.ExtendedSelection); self.tree.setContextMenuPolicy(Qt.CustomContextMenu); self.tree.customContextMenuRequested.connect(self.show_tree_context_menu); self.tree.itemSelectionChanged.connect(self.open_selected)
         tree_actions = QHBoxLayout(); expand_tree = QPushButton("פתח הכול"); expand_tree.setObjectName("subtle"); expand_tree.clicked.connect(self.tree.expandAll); tree_actions.addWidget(expand_tree); collapse_tree = QPushButton("סגור הכול"); collapse_tree.setObjectName("subtle"); collapse_tree.clicked.connect(self.tree.collapseAll); tree_actions.addWidget(collapse_tree); side.addLayout(tree_actions); side.addWidget(self.tree); splitter.addWidget(sidebar)
         details = QFrame(); details.setObjectName("details"); details_layout = QVBoxLayout(details); details_layout.setContentsMargins(10, 9, 10, 10); details_layout.setSpacing(8)
         details_header = QHBoxLayout(); self.page_details_toggle = QPushButton("⌃"); self.page_details_toggle.setObjectName("details-toggle"); self.page_details_toggle.setFixedWidth(34); self.page_details_toggle.setToolTip("קיפול פרטי העמוד"); self.page_details_toggle.clicked.connect(self.toggle_page_details); details_header.addWidget(self.page_details_toggle)
@@ -286,11 +262,6 @@ class CyberLearnEditor(QMainWindow):
         paths = [file.relative_to(self.content_dir).as_posix() for file in self.markdown_files()]
         return paths.index(relative) + 1 if relative in paths else len(paths) + 1
 
-    def ordered_paths_with(self, relative: str, position: int, old_relative: str | None = None) -> list[str]:
-        paths = [file.relative_to(self.content_dir).as_posix() for file in self.markdown_files()]
-        paths = [path for path in paths if path not in {relative, old_relative}]
-        paths.insert(min(max(position - 1, 0), len(paths)), relative)
-        return paths
     def folder_options(self) -> list[str]: return [ROOT_OPTION, *sorted((item.relative_to(self.content_dir).as_posix() for item in self.content_dir.rglob("*") if item.is_dir()), key=str.casefold)]
     def selected_folder(self) -> str: return "" if self.folder_combo.currentText() == ROOT_OPTION else self.folder_combo.currentText()
     @staticmethod
@@ -442,34 +413,6 @@ class CyberLearnEditor(QMainWindow):
         self.rebuild_index(moved_paths); self.refresh_tree()
         self.statusBar().showMessage(f"הועבר אל: content/{destination.relative_to(self.content_dir).as_posix()}")
 
-    def reorder_tree_item(self, source: QTreeWidgetItem, target: QTreeWidgetItem, before: bool, into_folder: bool = False) -> None:
-        source_path = source.data(0, Qt.UserRole) or self.tree_folder_path(source)
-        target_path = target.data(0, Qt.UserRole) or self.tree_folder_path(target)
-        if not source_path or not target_path or source is target:
-            return
-        target_folder = self.tree_folder_path(target)
-        if into_folder and target_folder is not None:
-            try:
-                self.move_tree_item_into_folder(source, target_folder)
-            except (OSError, ValueError) as error:
-                self.statusBar().showMessage(str(error))
-            return
-        source_parent, target_parent = source.parent() or self.tree.invisibleRootItem(), target.parent() or self.tree.invisibleRootItem()
-        source_parent_path = self.tree_folder_path(source.parent()) if source.parent() else ""
-        target_parent_path = self.tree_folder_path(target.parent()) if target.parent() else ""
-        if source_parent_path != target_parent_path:
-            self.statusBar().showMessage("אפשר לשנות סדר רק בין פריטים באותה תיקייה.")
-            return
-        siblings = [source_parent.child(index) for index in range(source_parent.childCount())]
-        siblings.remove(source); target_index = siblings.index(target) + (0 if before else 1); siblings.insert(target_index, source)
-        for position, item in enumerate(siblings, 1): self.set_tree_item_order(item, position * 10)
-        self.rebuild_index()
-        self.refresh_tree(); self.statusBar().showMessage("סדר התצוגה עודכן באמצעות גרירה בתפריט.")
-
-    def set_tree_item_order(self, item: QTreeWidgetItem, order: int) -> None:
-        """Ordering is intentionally stored only in content-index.json."""
-        return
-
     def open_selected(self) -> None:
         selected = self.tree.selectedItems()
         if len(selected) != 1 or not (relative := selected[0].data(0, Qt.UserRole)): return
@@ -529,15 +472,6 @@ class CyberLearnEditor(QMainWindow):
 
     def rebuild_index(self, paths: list[str] | None = None) -> None:
         self.repository.build_index(paths)
-        return
-        files = {file.relative_to(self.content_dir).as_posix(): file for file in self.content_dir.rglob("*.md")}
-        ordered_paths = [path for path in (paths or self.index_paths()) if path in files]
-        ordered_paths.extend(path for path in sorted(files, key=str.casefold) if path not in ordered_paths)
-        pages = []
-        for order, relative in enumerate(ordered_paths, 1):
-            file = files[relative]; parts = relative.removesuffix(".md").split("/")
-            pages.append({"title": self.title_from_markdown(file.read_text(encoding="utf-8"), file.stem), "slug": "/".join(parts), "folder": " / ".join(parts[:-1]) or "כללי", "path": relative, "file": f"content/{relative}", "order": order})
-        self.write_index(pages)
 
     def write_index(self, pages: list[dict]) -> None:
         temporary = self.index_path.with_suffix(".tmp"); temporary.write_text(json.dumps(pages, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"); temporary.replace(self.index_path)
@@ -572,6 +506,13 @@ class CyberLearnEditor(QMainWindow):
                 "background_color": current.get("background_color") or "#081421",
                 "theme_color": current.get("theme_color") or "#081421",
             })
+            icon_types = {".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon"}
+            assets_dir = self.project / "public" / "assets"
+            for suffix, mime_type in icon_types.items():
+                icon = assets_dir / f"favicon{suffix}"
+                if icon.exists():
+                    current["icons"] = [{"src": f"assets/{icon.name}", "sizes": "any", "type": mime_type}]
+                    break
             temporary = self.manifest_path.with_suffix(".tmp")
             temporary.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             temporary.replace(self.manifest_path)
@@ -602,28 +543,28 @@ class CyberLearnEditor(QMainWindow):
         temporary.replace(self.homepage_path)
 
     def edit_homepage(self) -> None:
-        dialog = QDialog(self); dialog.setWindowTitle("עמוד הבית"); dialog.resize(660, 620)
+        dialog = QDialog(self); dialog.setWindowTitle("עמוד הבית"); dialog.setLayoutDirection(Qt.RightToLeft); dialog.resize(660, 620)
         layout = QVBoxLayout(dialog)
         layout.addWidget(QLabel("הגדירו מסך פתיחה אופציונלי. ההגדרות נשמרות ב־homepage.json ואינן עמוד Markdown."))
-        form = QFormLayout(); layout.addLayout(form)
+        form = QFormLayout(); form.setLabelAlignment(Qt.AlignRight); form.setFormAlignment(Qt.AlignRight | Qt.AlignTop); layout.addLayout(form)
         settings = self.read_homepage()
         enabled = QCheckBox("הפעל עמוד בית"); enabled.setChecked(settings["enabled"]); form.addRow(enabled)
-        title = QLineEdit(settings["title"]); title.setLayoutDirection(Qt.RightToLeft); form.addRow("כותרת ראשית", title)
+        title = QLineEdit(settings["title"]); title.setLayoutDirection(Qt.RightToLeft); title.setAlignment(Qt.AlignRight); form.addRow("כותרת ראשית", title)
         description = QPlainTextEdit(settings["description"]); description.setFixedHeight(80); description.setLayoutDirection(Qt.RightToLeft); form.addRow("תיאור קצר", description)
         page_options = self.repository.read_index()
-        start_page = QComboBox(); start_page.addItem("ללא עמוד התחל כאן", "")
+        start_page = QComboBox(); start_page.setLayoutDirection(Qt.RightToLeft); start_page.addItem("ללא עמוד התחל כאן", "")
         for page in page_options:
             start_page.addItem(f"{page.get('title', page['path'])} — {page['path']}", page["path"])
         start_page.setCurrentIndex(max(0, start_page.findData(settings["startPage"]))); form.addRow("עמוד התחל כאן", start_page)
         show_categories = QCheckBox("הצג קטגוריות ראשיות"); show_categories.setChecked(settings["showCategories"]); form.addRow(show_categories)
         show_counts = QCheckBox("הצג מספר עמודים בכל קטגוריה"); show_counts.setChecked(settings["showPageCounts"]); form.addRow(show_counts)
         show_featured = QCheckBox("הצג עמודים מומלצים"); show_featured.setChecked(settings["showFeatured"]); form.addRow(show_featured)
-        featured = QListWidget(); featured.setSelectionMode(QAbstractItemView.MultiSelection); featured.setMinimumHeight(150)
+        featured = QListWidget(); featured.setLayoutDirection(Qt.RightToLeft); featured.setSelectionMode(QAbstractItemView.MultiSelection); featured.setMinimumHeight(150)
         for page in page_options:
             choice = QListWidgetItem(f"{page.get('title', page['path'])} — {page['path']}")
             choice.setData(Qt.UserRole, page["path"])
-            choice.setSelected(page["path"] in settings["featuredPages"])
             featured.addItem(choice)
+            choice.setSelected(page["path"] in settings["featuredPages"])
         form.addRow("בחירת עמודים מומלצים", featured)
         dependent = [title, description, start_page, show_categories, show_counts, show_featured, featured]
         def update_enabled(checked: bool) -> None:
@@ -639,16 +580,16 @@ class CyberLearnEditor(QMainWindow):
         save.clicked.connect(save_homepage); dialog.exec()
 
     def edit_site_texts(self) -> None:
-        dialog = QDialog(self); dialog.setWindowTitle("הגדרות האתר"); dialog.resize(720, 760)
+        dialog = QDialog(self); dialog.setWindowTitle("הגדרות האתר"); dialog.setLayoutDirection(Qt.RightToLeft); dialog.resize(720, 760)
         layout = QVBoxLayout(dialog); layout.addWidget(QLabel("שנו טקסטים, כותרות וגדלי פונטים באתר ובמסך הבית. השינויים נשמרים ב־site-texts.json."))
-        form_widget = QWidget(); form = QFormLayout(form_widget); form.setLabelAlignment(Qt.AlignRight)
+        form_widget = QWidget(); form_widget.setLayoutDirection(Qt.RightToLeft); form = QFormLayout(form_widget); form.setLabelAlignment(Qt.AlignRight); form.setFormAlignment(Qt.AlignRight | Qt.AlignTop)
         texts, fields = self.read_site_texts(), {}
         labels = {
             "site_title": "כותרת הדפדפן", "brand_prefix": "שם מותג — חלק ראשון", "brand_accent": "שם מותג — חלק מודגש", "brand_home_label": "תיאור קישור הבית", "tagline": "שורת תיאור עליונה", "menu_label": "כפתור תפריט נייד", "theme_light_label": "כפתור מצב בהיר", "theme_dark_label": "כפתור מצב כהה", "learning_path_label": "כותרת סרגל הצד", "navigation_label": "תיאור ניווט נגיש", "loading_content": "הודעת טעינת תכנים", "page_count": "מונה עמודים ({count})", "empty_title": "כותרת ללא תכנים", "empty_description": "הודעה ללא תכנים", "loading_page": "הודעת טעינת עמוד", "load_error_title": "כותרת שגיאת טעינה", "load_error_description": "הודעת שגיאת טעינה ({file})", "missing_index_title": "כותרת אינדקס חסר", "missing_index_description": "הודעת אינדקס חסר", "homepage_start_label": "עמוד הבית — כפתור התחלה", "homepage_categories_title": "עמוד הבית — כותרת קטגוריות", "homepage_featured_title": "עמוד הבית — כותרת מומלצים", "homepage_page_count": "עמוד הבית — מונה עמודים ({count})",
         }
         for key, label in labels.items():
             field = QLineEdit(texts[key]); field.setLayoutDirection(Qt.RightToLeft); field.setAlignment(Qt.AlignRight); fields[key] = field; form.addRow(label, field)
-        default_navigation = QComboBox(); default_navigation.addItem("כל השכבות פתוחות", "true"); default_navigation.addItem("כל השכבות סגורות", "false"); default_navigation.setCurrentIndex(0 if texts["navigation_default_expanded"] != "false" else 1); fields["navigation_default_expanded"] = default_navigation; form.addRow("ברירת מחדל לתפריט הצדדי", default_navigation)
+        default_navigation = QComboBox(); default_navigation.setLayoutDirection(Qt.RightToLeft); default_navigation.addItem("כל השכבות פתוחות", "true"); default_navigation.addItem("כל השכבות סגורות", "false"); default_navigation.setCurrentIndex(0 if texts["navigation_default_expanded"] != "false" else 1); fields["navigation_default_expanded"] = default_navigation; form.addRow("ברירת מחדל לתפריט הצדדי", default_navigation)
         form.addRow(QLabel("גדלי פונטים באתר (פיקסלים)"), QLabel(""))
         font_labels = {"font_size_body": "טקסט תוכן", "font_size_h1": "כותרת ראשית", "font_size_h2": "כותרת משנה", "font_size_h3": "כותרת שלישית", "font_size_sidebar": "קישורים בתפריט הצדדי", "font_size_sidebar_heading": "כותרות בתפריט הצדדי", "sidebar_spacing": "רווח אנכי בתפריט הצדדי"}
         for key, label in font_labels.items():
@@ -656,7 +597,7 @@ class CyberLearnEditor(QMainWindow):
             try: field.setValue(int(texts[key]))
             except ValueError: field.setValue(int(SITE_TEXT_DEFAULTS[key]))
             fields[key] = field; form.addRow(label, field)
-        scroll = QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(form_widget); layout.addWidget(scroll, 1)
+        scroll = QScrollArea(); scroll.setLayoutDirection(Qt.RightToLeft); scroll.setWidgetResizable(True); scroll.setWidget(form_widget); layout.addWidget(scroll, 1)
         actions = QHBoxLayout(); actions.addStretch(); cancel = QPushButton("ביטול"); save = QPushButton("שמור טקסטים"); save.setObjectName("save"); actions.addWidget(cancel); actions.addWidget(save); layout.addLayout(actions)
         cancel.clicked.connect(dialog.reject)
         def save_texts() -> None:
@@ -944,41 +885,6 @@ class CyberLearnEditor(QMainWindow):
         self._local_server_port = None
         self.set_local_site_button_state(False)
         self.statusBar().showMessage("האתר המקומי נעצר")
-
-    def preview(self) -> None:
-        previous_dialog = getattr(self, "_preview_dialog", None)
-        if previous_dialog and previous_dialog.isVisible():
-            previous_dialog.close()
-
-        dialog = QDialog(self, Qt.WindowType.Window)
-        dialog.setWindowTitle("תצוגה מקדימה — רינדור האתר")
-        dialog.resize(1000, 760)
-        layout = QVBoxLayout(dialog); view = QWebEngineView(); layout.addWidget(view)
-        preview_source = self.body.toPlainText().replace("](/assets/", "](assets/")
-        source = json.dumps(preview_source).replace("<", "\\u003c")
-        document = f'''<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="assets/styles.css"><script src="assets/vendor/markdown-it.min.js"></script><script src="assets/vendor/purify.min.js"></script><script src="assets/vendor/highlight.min.js"></script><script src="assets/vendor/mermaid.min.js"></script><style>body{{padding:20px}}.article{{max-width:100%;margin:auto}}#fallback{{white-space:pre-wrap;direction:rtl;color:#edf5fa}}</style></head><body><main id="content"><article class="article"><pre id="fallback"></pre></article></main><script>document.querySelector('#fallback').textContent={source};</script><script>
-const MarkdownIt=window.markdownit,DOMPurify=window.DOMPurify,hljs=window.hljs,mermaid=window.mermaid;
-const source={source}; const safe=url=>/^(https?:|mailto:|tel:|\\/|\\.\\/|\\.\\.\\/|#)/i.test(url)?url:'#';
-const md=new MarkdownIt({{html:false,linkify:true,highlight(code,lang){{const known=lang&&hljs.getLanguage(lang);return `<pre><code class="hljs language-${{lang||'text'}}">${{known?hljs.highlight(code,{{language:lang}}).value:MarkdownIt().utils.escapeHtml(code)}}</code></pre>`;}}}});
-md.renderer.rules.link_open=(tokens,index,options,env,self)=>{{const href=safe(tokens[index].attrGet('href')||'');tokens[index].attrSet('href',href);if(/^https?:/i.test(href)){{tokens[index].attrSet('target','_blank');tokens[index].attrSet('rel','noopener noreferrer');}}return self.renderToken(tokens,index,options);}};
-md.renderer.rules.image=(tokens,index,options,env,self)=>{{tokens[index].attrSet('src',safe(tokens[index].attrGet('src')||''));return self.renderToken(tokens,index,options);}};
-const prepared=source.replace(/^:::(note|tip|warning|danger|exercise)\\s*$/gim,'<div class="callout $1">').replace(/^:::(rtl|ltr)\\s*$/gim,'<div class="markdown-direction" dir="$1">').replace(/^:::\\s*$/gm,'</div>');
-document.querySelector('#content').innerHTML=`<article class="article">${{DOMPurify.sanitize(md.render(prepared),{{ADD_ATTR:['target','rel','dir'],ADD_TAGS:['div']}})}}</article>`;
-const diagrams=document.querySelectorAll('code.language-mermaid');if(diagrams.length){{mermaid.initialize({{startOnLoad:false,securityLevel:'strict',theme:'dark'}});for(const code of diagrams){{const host=document.createElement('div');host.className='mermaid';host.textContent=code.textContent;code.closest('pre').replaceWith(host);mermaid.run({{nodes:[host]}}).catch(()=>{{host.textContent='שגיאה בתרשים Mermaid';}});}}}}
-</script></body></html>'''
-        preview_file = self.project / "public" / ".editor-preview.html"
-        try:
-            preview_file.write_text(document, encoding="utf-8")
-        except OSError as error:
-            QMessageBox.critical(self, "תצוגה מקדימה", f"לא ניתן ליצור את קובץ התצוגה המקדימה:\n{error}")
-            return
-
-        # טעינת קובץ HTML מקומי (ולא setHtml) מאפשרת ל-WebEngine לטעון את אותן ספריות
-        # מקומיות שהאתר טוען, מאותו מקור file://.
-        view.setUrl(QUrl.fromLocalFile(str(preview_file.resolve())))
-        self._preview_dialog = dialog
-        dialog.finished.connect(lambda: setattr(self, "_preview_dialog", None))
-        dialog.show()
 
     def restore_recovery(self) -> None:
         path = self.project / ".editor-recovery.json"
