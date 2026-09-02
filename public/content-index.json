@@ -1,182 +1,11 @@
 [
   {
-    "title": "תיכון מיתרים",
-    "slug": "meitarim",
-    "folder": "כללי",
-    "path": "meitarim.md",
-    "file": "content/meitarim.md",
-    "order": 1,
-    "show_toc": true
-  },
-  {
-    "title": "מבוא ללימוד פייתון",
-    "slug": "Python/פרק 1 - מבוא ללימוד פייתון/chapter1",
-    "folder": "Python / פרק 1 - מבוא ללימוד פייתון",
-    "path": "Python/פרק 1 - מבוא ללימוד פייתון/chapter1.md",
-    "file": "content/Python/פרק 1 - מבוא ללימוד פייתון/chapter1.md",
-    "order": 2,
-    "show_toc": true
-  },
-  {
-    "title": "סביבת עבודה Visual Studio code",
-    "slug": "Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2",
-    "folder": "Python / פרק 2 - סביבת עבודה Visual Studio code",
-    "path": "Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2.md",
-    "file": "content/Python/פרק 2 - סביבת עבודה Visual Studio code/chapter2.md",
-    "order": 3,
-    "show_toc": true
-  },
-  {
-    "title": "משתנים",
-    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים",
-    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
-    "path": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
-    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
-    "order": 4,
-    "show_toc": true
-  },
-  {
-    "title": "לולאות",
-    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/לולאות",
-    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
-    "path": "Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
-    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
-    "order": 5,
-    "show_toc": true
-  },
-  {
-    "title": "תנאים",
-    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים",
-    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
-    "path": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
-    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
-    "order": 6,
-    "show_toc": true
-  },
-  {
-    "title": "מחרוזות",
-    "slug": "Python/פרק 4 - מחרוזות/מחרוזות",
-    "folder": "Python / פרק 4 - מחרוזות",
-    "path": "Python/פרק 4 - מחרוזות/מחרוזות.md",
-    "file": "content/Python/פרק 4 - מחרוזות/מחרוזות.md",
-    "order": 7,
-    "show_toc": true
-  },
-  {
-    "title": "פונקציות",
-    "slug": "Python/פרק 5 - פונקציות/פונקציות",
-    "folder": "Python / פרק 5 - פונקציות",
-    "path": "Python/פרק 5 - פונקציות/פונקציות.md",
-    "file": "content/Python/פרק 5 - פונקציות/פונקציות.md",
-    "order": 8,
-    "show_toc": true
-  },
-  {
-    "title": "List, Tuple",
-    "slug": "Python/פרק 6 - List , Tuple/listtuple",
-    "folder": "Python / פרק 6 - List , Tuple",
-    "path": "Python/פרק 6 - List , Tuple/listtuple.md",
-    "file": "content/Python/פרק 6 - List , Tuple/listtuple.md",
-    "order": 9,
-    "show_toc": true
-  },
-  {
-    "title": "כתיבת קוד נכונה",
-    "slug": "Python/פרק 7 - כתיבת קוד נכונה/קודנכון",
-    "folder": "Python / פרק 7 - כתיבת קוד נכונה",
-    "path": "Python/פרק 7 - כתיבת קוד נכונה/קודנכון.md",
-    "file": "content/Python/פרק 7 - כתיבת קוד נכונה/קודנכון.md",
-    "order": 10,
-    "show_toc": true
-  },
-  {
-    "title": "קבצים ופרמטרים לסקריפטים",
-    "slug": "Python/פרק 8 - קבצים ופרמטרים לסקריפטים/קבצים",
-    "folder": "Python / פרק 8 - קבצים ופרמטרים לסקריפטים",
-    "path": "Python/פרק 8 - קבצים ופרמטרים לסקריפטים/קבצים.md",
-    "file": "content/Python/פרק 8 - קבצים ופרמטרים לסקריפטים/קבצים.md",
-    "order": 11,
-    "show_toc": true
-  },
-  {
-    "title": "Exceptions",
-    "slug": "Python/פרק 9 - Exceptions/exceptions",
-    "folder": "Python / פרק 9 - Exceptions",
-    "path": "Python/פרק 9 - Exceptions/exceptions.md",
-    "file": "content/Python/פרק 9 - Exceptions/exceptions.md",
-    "order": 12,
-    "show_toc": true
-  },
-  {
-    "title": "תכנות מונחה עצמים – OOP",
-    "slug": "Python/פרק 10 - תכנות מונחה עצמים – OOP/oop",
-    "folder": "Python / פרק 10 - תכנות מונחה עצמים – OOP",
-    "path": "Python/פרק 10 - תכנות מונחה עצמים – OOP/oop.md",
-    "file": "content/Python/פרק 10 - תכנות מונחה עצמים – OOP/oop.md",
-    "order": 13,
-    "show_toc": true
-  },
-  {
-    "title": "OOP מתקדם – תכנות משחקים באמצעות PyGame",
-    "slug": "Python/פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame/oopgames",
-    "folder": "Python / פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame",
-    "path": "Python/פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame/oopgames.md",
-    "file": "content/Python/פרק 11 - OOP מתקדם – תכנות משחקים באמצעות PyGame/oopgames.md",
-    "order": 14,
-    "show_toc": true
-  },
-  {
-    "title": "מילונים",
-    "slug": "Python/פרק 12 - מילונים/מילונים",
-    "folder": "Python / פרק 12 - מילונים",
-    "path": "Python/פרק 12 - מילונים/מילונים.md",
-    "file": "content/Python/פרק 12 - מילונים/מילונים.md",
-    "order": 15,
-    "show_toc": true
-  },
-  {
-    "title": "List Comprehensions, Magic Functions",
-    "slug": "Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions",
-    "folder": "Python / פרק 13 - List Comprehensions, Magic Functions",
-    "path": "Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions.md",
-    "file": "content/Python/פרק 13 - List Comprehensions, Magic Functions/magicfunctions.md",
-    "order": 16,
-    "show_toc": true
-  },
-  {
-    "title": "כלי דיאגנוסטיקה Sysinternals",
-    "slug": "OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals",
-    "folder": "OS / פרק 1 - כלי דיאגנוסטיקה Sysinternals",
-    "path": "OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals.md",
-    "file": "content/OS/פרק 1 - כלי דיאגנוסטיקה Sysinternals/sysinternals.md",
-    "order": 17,
-    "show_toc": true
-  },
-  {
-    "title": "פרק 2 - מחקר אזורי הזיכרון של תוכנה",
-    "slug": "OS/memory",
-    "folder": "OS",
-    "path": "OS/memory.md",
-    "file": "content/OS/memory.md",
-    "order": 18,
-    "show_toc": true
-  },
-  {
-    "title": "הנחיות",
-    "slug": "Projects/תיק פרויקט/הנחיות",
-    "folder": "Projects / תיק פרויקט",
-    "path": "Projects/תיק פרויקט/הנחיות.md",
-    "file": "content/Projects/תיק פרויקט/הנחיות.md",
-    "order": 19,
-    "show_toc": true
-  },
-  {
     "title": "מבוא",
     "slug": "Projects/תיק פרויקט/מבוא",
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מבוא.md",
     "file": "content/Projects/תיק פרויקט/מבוא.md",
-    "order": 20,
+    "order": 1,
     "show_toc": true
   },
   {
@@ -185,7 +14,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מבנה.md",
     "file": "content/Projects/תיק פרויקט/מבנה.md",
-    "order": 21,
+    "order": 2,
     "show_toc": true
   },
   {
@@ -194,7 +23,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מימוש.md",
     "file": "content/Projects/תיק פרויקט/מימוש.md",
-    "order": 22,
+    "order": 3,
     "show_toc": true
   },
   {
@@ -203,7 +32,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מדריךמשתמש.md",
     "file": "content/Projects/תיק פרויקט/מדריךמשתמש.md",
-    "order": 23,
+    "order": 4,
     "show_toc": true
   },
   {
@@ -212,7 +41,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/רפלקציה.md",
     "file": "content/Projects/תיק פרויקט/רפלקציה.md",
-    "order": 24,
+    "order": 5,
     "show_toc": true
   },
   {
@@ -221,7 +50,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/ביבליוגרפיה.md",
     "file": "content/Projects/תיק פרויקט/ביבליוגרפיה.md",
-    "order": 25,
+    "order": 6,
     "show_toc": true
   },
   {
@@ -230,7 +59,16 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/נספחים.md",
     "file": "content/Projects/תיק פרויקט/נספחים.md",
-    "order": 26,
+    "order": 7,
+    "show_toc": true
+  },
+  {
+    "title": "הנחיות",
+    "slug": "Projects/תיק פרויקט/הנחיות",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/הנחיות.md",
+    "file": "content/Projects/תיק פרויקט/הנחיות.md",
+    "order": 8,
     "show_toc": true
   }
 ]

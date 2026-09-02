@@ -5,6 +5,15 @@
   "startPage": "",
   "showCategories": true,
   "showPageCounts": true,
-  "showFeatured": false,
-  "featuredPages": []
+  "showFeatured": true,
+  "featuredPages": [
+    "Projects/תיק פרויקט/מבוא.md",
+    "Projects/תיק פרויקט/מבנה.md",
+    "Projects/תיק פרויקט/מימוש.md",
+    "Projects/תיק פרויקט/מדריךמשתמש.md",
+    "Projects/תיק פרויקט/רפלקציה.md",
+    "Projects/תיק פרויקט/ביבליוגרפיה.md",
+    "Projects/תיק פרויקט/נספחים.md",
+    "Projects/תיק פרויקט/הנחיות.md"
+  ]
 }
