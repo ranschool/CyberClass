@@ -37,6 +37,10 @@ SITE_TEXT_DEFAULTS = {
     "load_error_description": "ודאו שהקובץ {file} קיים, ושהאתר מופעל דרך שרת מקומי.",
     "missing_index_title": "חסר קובץ אינדקס",
     "missing_index_description": "פתחו את תוכנת העורך ושמרו עמוד כדי ליצור את האינדקס אוטומטית.",
+    "homepage_start_label": "התחל כאן",
+    "homepage_categories_title": "תחומי לימוד",
+    "homepage_featured_title": "מומלץ להתחיל",
+    "homepage_page_count": "{count} עמודים",
     "font_size_body": "18",
     "font_size_h1": "56",
     "font_size_h2": "29",
@@ -81,6 +85,7 @@ class CyberLearnEditor(QMainWindow):
         self.images_dir = self.project / "public" / "assets" / "images"
         self.index_path = self.project / "public" / "content-index.json"
         self.site_text_path = self.project / "public" / "site-texts.json"
+        self.manifest_path = self.project / "public" / "manifest.webmanifest"
         self.homepage_path = self.project / "public" / "homepage.json"
         self.editor_settings_path = self.project / ".editor-settings.json"
         self.current_file: Path | None = None
@@ -94,62 +99,87 @@ class CyberLearnEditor(QMainWindow):
         self.images_dir.mkdir(parents=True, exist_ok=True)
         if not self.index_path.exists(): self.write_index([])
         if not self.site_text_path.exists(): self.write_site_texts(SITE_TEXT_DEFAULTS)
+        self.update_manifest()
         self.setWindowTitle("עורך תוכן"); self.resize(1380, 820); self.setMinimumSize(1050, 650)
         self.build_ui(); self.refresh_tree(); self.restore_recovery()
 
     def build_ui(self) -> None:
         self._editor_style_template = """
-            QMainWindow,QDialog{background:#081421;color:#edf5fa;font-family:Assistant,Arial;font-size:__EDITOR_FONT_SIZE__px}
-            QFrame#header,QFrame#details,QFrame#toolbar{background:#13243a;border-radius:10px}
-            QLabel{color:#dbe8f1} QLineEdit,QPlainTextEdit,QComboBox,QTreeWidget,QTextBrowser{background:#07111d;color:#edf5fa;border:1px solid #28516c;border-radius:7px;padding:7px}
-            QTreeWidget{background:#0c1a2a;border:0} QTreeWidget::item:selected{background:#15516a} QComboBox QAbstractItemView{background:#13243a;color:white;selection-background-color:#15516a}
-            QPushButton{background:#1b4261;color:white;border:0;border-radius:7px;padding:8px 11px} QPushButton:hover{background:#285775}
-            QPushButton#save{background:#00a878;color:#06121d;font-weight:bold} QPushButton#save:hover{background:#00c58c} QPushButton#danger{background:#8d3144}
-            QStatusBar{background:#102238;color:#aebdca}
+            QMainWindow,QDialog{background:#091522;color:#eaf3f8;font-family:Assistant,Arial;font-size:__EDITOR_FONT_SIZE__px}
+            QFrame#header{background:#10243a;border:1px solid #244761;border-radius:14px}
+            QFrame#sidebar-card,QFrame#editor-card,QFrame#details,QFrame#toolbar{background:#0d1e30;border:1px solid #213f58;border-radius:12px}
+            QPushButton#details-toggle{background:transparent;color:#b9d8e8;border-color:#315f78;padding:5px 10px}
+            QPushButton#details-toggle:hover{background:#16364d;color:white}
+            QLabel{color:#d7e6ef}
+            QLabel#section-title{color:#f4fbff;font-size:__SECTION_FONT_SIZE__px;font-weight:700} QLabel#muted{color:#94adbd}
+            QLineEdit,QPlainTextEdit,QComboBox,QTreeWidget,QTextBrowser{background:#081522;color:#f4f9fc;border:1px solid #2a4a62;border-radius:8px;padding:8px}
+            QLineEdit:focus,QPlainTextEdit:focus,QComboBox:focus,QTreeWidget:focus{border:2px solid #00bfe8;background:#0a1928}
+            QPlainTextEdit{selection-background-color:#155c76} QTreeWidget{background:#091929;border:0;padding:5px}
+            QTreeWidget::item{padding:7px 5px;border-radius:6px} QTreeWidget::item:hover{background:#123149} QTreeWidget::item:selected{background:#12516a;color:white}
+            QComboBox QAbstractItemView{background:#10243a;color:white;selection-background-color:#155b74}
+            QPushButton{background:#173851;color:#eaf5fa;border:1px solid transparent;border-radius:8px;padding:8px 11px;font-weight:600}
+            QPushButton:hover{background:#23516e;border-color:#3a7694} QPushButton:pressed{background:#102b41}
+            QPushButton#subtle{background:transparent;border-color:#31536b;color:#b9d0dd} QPushButton#subtle:hover{background:#173851;color:white}
+            QPushButton#save{background:#10c58b;color:#052319;border:0;font-weight:800;padding:9px 16px} QPushButton#save:hover{background:#33d9a3}
+            QPushButton#danger{background:transparent;border-color:#7f3c4d;color:#ffadba} QPushButton#danger:hover{background:#6e3042;color:white}
+            QCheckBox{spacing:8px;color:#d7e6ef} QCheckBox::indicator{width:17px;height:17px;border:1px solid #47718a;border-radius:5px;background:#081522} QCheckBox::indicator:checked{background:#00bfe8;border-color:#00bfe8}
+            QScrollBar:vertical{background:#091522;width:10px;margin:4px;border-radius:5px} QScrollBar::handle:vertical{background:#315a72;border-radius:5px;min-height:28px}
+            QStatusBar{background:#0b1b2b;color:#9db5c3;border-top:1px solid #1d3b52} QStatusBar::item{border:0}
         """
-        self.setStyleSheet(self._editor_style_template.replace("__EDITOR_FONT_SIZE__", str(self.editor_font_size)))
+        self.apply_interface_font_size()
         root = QWidget(); outer = QVBoxLayout(root); outer.setContentsMargins(18, 14, 18, 14); outer.setSpacing(12)
-        header = QFrame(); header.setObjectName("header"); header_layout = QHBoxLayout(header)
-        self.editor_heading = QLabel("עורך תוכן")
-        self.editor_heading.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.65)}px;font-weight:700;color:#00d4ff")
-        header_layout.addWidget(self.editor_heading); header_layout.addStretch(); header_layout.addWidget(QLabel("כל שמירה מעדכנת את אינדקס האתר"))
-        header_layout.addWidget(QLabel("גודל טקסט בעורך:"))
-        self.editor_font_size_control = QSpinBox(); self.editor_font_size_control.setRange(10, 28); self.editor_font_size_control.setSuffix(" px"); self.editor_font_size_control.setValue(self.editor_font_size); self.editor_font_size_control.valueChanged.connect(self.set_editor_font_size); header_layout.addWidget(self.editor_font_size_control)
-        self.local_site_button = QPushButton("▶ פתח אתר מקומי"); self.local_site_button.clicked.connect(self.toggle_local_site); header_layout.addWidget(self.local_site_button)
-        button = QPushButton("◉ החלפת סמל אתר"); button.clicked.connect(self.change_favicon); header_layout.addWidget(button)
-        button = QPushButton("⚙ טקסטים קבועים באתר"); button.clicked.connect(self.edit_site_texts); header_layout.addWidget(button)
-        button = QPushButton("⌂ עמוד הבית"); button.clicked.connect(self.edit_homepage); header_layout.addWidget(button)
-        button = QPushButton("✓ בדיקת האתר"); button.clicked.connect(self.validate_site); header_layout.addWidget(button)
-        button = QPushButton("↻ רענון"); button.clicked.connect(self.refresh_with_guard); header_layout.addWidget(button); outer.addWidget(header)
+        header = QFrame(); header.setObjectName("header"); header_layout = QHBoxLayout(header); header_layout.setContentsMargins(18, 13, 18, 13); header_layout.setSpacing(9)
+        title_box = QVBoxLayout(); title_box.setSpacing(1)
+        self.editor_heading = QLabel("עורך התוכן")
+        self.editor_heading.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.65)}px;font-weight:800;color:#f4fbff")
+        title_box.addWidget(self.editor_heading); header_layout.addLayout(title_box); header_layout.addStretch()
+        saved_hint = QLabel("כל שמירה מעדכנת את האתר והחיפוש"); saved_hint.setObjectName("muted"); header_layout.addWidget(saved_hint)
+        font_label = QLabel("טקסט"); font_label.setObjectName("muted"); header_layout.addWidget(font_label)
+        self.editor_font_size_control = QSpinBox(); self.editor_font_size_control.setRange(10, 28); self.editor_font_size_control.setSuffix(" px"); self.editor_font_size_control.setValue(self.editor_font_size); self.editor_font_size_control.setToolTip("גודל כל הטקסטים בעורך"); self.editor_font_size_control.valueChanged.connect(self.set_editor_font_size); header_layout.addWidget(self.editor_font_size_control)
+        self.local_site_button = QPushButton("▶ תצוגת אתר"); self.local_site_button.setObjectName("subtle"); self.local_site_button.clicked.connect(self.toggle_local_site); header_layout.addWidget(self.local_site_button)
+        settings = QPushButton("הגדרות אתר"); settings.setObjectName("subtle")
+        settings_menu = QMenu(settings); site_text_action = settings_menu.addAction("טקסטים, פונטים וניווט"); site_text_action.triggered.connect(self.edit_site_texts); home_action = settings_menu.addAction("עמוד הבית"); home_action.triggered.connect(self.edit_homepage); icon_action = settings_menu.addAction("החלפת סמל אתר"); icon_action.triggered.connect(self.change_favicon); settings.setMenu(settings_menu); header_layout.addWidget(settings)
+        button = QPushButton("✓ בדיקה"); button.setObjectName("subtle"); button.clicked.connect(self.validate_site); header_layout.addWidget(button)
+        button = QPushButton("↻"); button.setObjectName("subtle"); button.setToolTip("רענון עץ התוכן"); button.clicked.connect(self.refresh_with_guard); header_layout.addWidget(button); outer.addWidget(header)
         splitter = QSplitter(Qt.Horizontal); splitter.setLayoutDirection(Qt.RightToLeft)
-        sidebar = QWidget(); side = QVBoxLayout(sidebar); self.sidebar_title = QLabel("עמודי האתר"); self.sidebar_title.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.3)}px;font-weight:700;color:#ffd93d"); side.addWidget(self.sidebar_title)
-        button = QPushButton("＋ עמוד חדש"); button.clicked.connect(self.new_page); side.addWidget(button)
-        button = QPushButton("＋ תיקייה חדשה"); button.clicked.connect(self.new_folder_dialog); side.addWidget(button)
+        sidebar = QFrame(); sidebar.setObjectName("sidebar-card"); side = QVBoxLayout(sidebar); side.setContentsMargins(13, 14, 13, 13); side.setSpacing(8)
+        self.sidebar_title = QLabel("תוכן האתר"); self.sidebar_title.setObjectName("section-title"); side.addWidget(self.sidebar_title)
+        side_hint = QLabel("סדר, פרסום וארגון של שיעורים"); side_hint.setObjectName("muted"); side.addWidget(side_hint)
+        create_row = QHBoxLayout(); button = QPushButton("＋ עמוד חדש"); button.clicked.connect(self.new_page); create_row.addWidget(button); button = QPushButton("＋ תיקייה"); button.setObjectName("subtle"); button.clicked.connect(self.new_folder_dialog); create_row.addWidget(button); side.addLayout(create_row)
         publish_buttons = QHBoxLayout(); publish = QPushButton("פרסם נבחרים"); unpublish = QPushButton("הסר מפרסום"); publish.clicked.connect(lambda: self.set_selected_publication(True)); unpublish.clicked.connect(lambda: self.set_selected_publication(False)); publish_buttons.addWidget(publish); publish_buttons.addWidget(unpublish); side.addLayout(publish_buttons)
         order_buttons = QHBoxLayout(); up = QPushButton("↑ העלה"); down = QPushButton("↓ הורד"); up.clicked.connect(lambda: self.move_selected_in_order(-1)); down.clicked.connect(lambda: self.move_selected_in_order(1)); order_buttons.addWidget(up); order_buttons.addWidget(down); side.addLayout(order_buttons)
-        button = QPushButton("✎ שינוי שם תיקייה"); button.clicked.connect(self.rename_folder_dialog); side.addWidget(button)
+        button = QPushButton("✎ שינוי שם תיקייה"); button.setObjectName("subtle"); button.clicked.connect(self.rename_folder_dialog); side.addWidget(button)
         button = QPushButton("מחק פריט נבחר"); button.setObjectName("danger"); button.clicked.connect(self.delete_selected_tree_item); side.addWidget(button)
-        self.tree = ReorderTreeWidget(self.reorder_tree_item); self.tree.setHeaderHidden(True); self.tree.setSelectionMode(QAbstractItemView.ExtendedSelection); self.tree.setContextMenuPolicy(Qt.CustomContextMenu); self.tree.customContextMenuRequested.connect(self.show_tree_context_menu); self.tree.itemSelectionChanged.connect(self.open_selected); side.addWidget(self.tree); splitter.addWidget(sidebar)
-        edit = QWidget(); layout = QVBoxLayout(edit); layout.setContentsMargins(10, 0, 0, 0); layout.setSpacing(9)
-        details = QFrame(); details.setObjectName("details"); form = QFormLayout(details); form.setLabelAlignment(Qt.AlignRight); form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.tree = ReorderTreeWidget(self.reorder_tree_item); self.tree.setHeaderHidden(True); self.tree.setSelectionMode(QAbstractItemView.ExtendedSelection); self.tree.setContextMenuPolicy(Qt.CustomContextMenu); self.tree.customContextMenuRequested.connect(self.show_tree_context_menu); self.tree.itemSelectionChanged.connect(self.open_selected)
+        tree_actions = QHBoxLayout(); expand_tree = QPushButton("פתח הכול"); expand_tree.setObjectName("subtle"); expand_tree.clicked.connect(self.tree.expandAll); tree_actions.addWidget(expand_tree); collapse_tree = QPushButton("סגור הכול"); collapse_tree.setObjectName("subtle"); collapse_tree.clicked.connect(self.tree.collapseAll); tree_actions.addWidget(collapse_tree); side.addLayout(tree_actions); side.addWidget(self.tree); splitter.addWidget(sidebar)
+        details = QFrame(); details.setObjectName("details"); details_layout = QVBoxLayout(details); details_layout.setContentsMargins(10, 9, 10, 10); details_layout.setSpacing(8)
+        details_header = QHBoxLayout(); self.page_details_toggle = QPushButton("⌃"); self.page_details_toggle.setObjectName("details-toggle"); self.page_details_toggle.setFixedWidth(34); self.page_details_toggle.setToolTip("קיפול פרטי העמוד"); self.page_details_toggle.clicked.connect(self.toggle_page_details); details_header.addWidget(self.page_details_toggle)
+        details_title = QLabel("פרטי העמוד"); details_title.setObjectName("section-title"); details_header.addWidget(details_title); details_header.addStretch(); details_layout.addLayout(details_header)
+        self.page_details_form = QWidget(); form = QFormLayout(self.page_details_form); form.setLabelAlignment(Qt.AlignRight); form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.title_edit = QLineEdit(); self.filename_edit = QLineEdit(); self.folder_combo = QComboBox(); self.order_edit = QSpinBox(); self.order_edit.setRange(1, 9999); self.published_check = QCheckBox("פרסם עמוד זה באתר")
         for field in (self.title_edit, self.filename_edit):
             field.setAlignment(Qt.AlignRight); field.setLayoutDirection(Qt.RightToLeft)
         self.folder_combo.setLayoutDirection(Qt.RightToLeft)
         folder_row = QWidget(); folders = QHBoxLayout(folder_row); folders.setContentsMargins(0, 0, 0, 0); folders.addWidget(self.folder_combo, 1)
-        form.addRow("כותרת", self.title_edit); form.addRow("מיקום בתיקיות", folder_row); form.addRow("שם הקובץ", self.filename_edit); form.addRow("סדר תצוגה", self.order_edit); form.addRow("פרסום", self.published_check); layout.addWidget(details)
-        toolbar = QFrame(); toolbar.setObjectName("toolbar"); tools = QHBoxLayout(toolbar); tools.setContentsMargins(8, 6, 8, 6)
-        tools.addWidget(QLabel("כיוון התוכן:"))
+        form.addRow("כותרת", self.title_edit); form.addRow("מיקום בתיקיות", folder_row); form.addRow("שם הקובץ", self.filename_edit); form.addRow("סדר תצוגה", self.order_edit); form.addRow("פרסום", self.published_check); details_layout.addWidget(self.page_details_form)
+        edit = QFrame(); edit.setObjectName("editor-card"); layout = QVBoxLayout(edit); layout.setContentsMargins(15, 15, 15, 13); layout.setSpacing(10)
+        layout.addWidget(details)
+        toolbar = QFrame(); toolbar.setObjectName("toolbar"); toolbar_layout = QVBoxLayout(toolbar); toolbar_layout.setContentsMargins(10, 8, 10, 8); toolbar_layout.setSpacing(6)
+        tools = QHBoxLayout(); tools.setSpacing(6); toolbar_layout.addLayout(tools)
+        direction_label = QLabel("כיוון"); direction_label.setObjectName("muted"); tools.addWidget(direction_label)
         self.direction_combo = QComboBox(); self.direction_combo.addItem("RTL — ימין לשמאל", Qt.RightToLeft); self.direction_combo.addItem("LTR — שמאל לימין", Qt.LeftToRight); tools.addWidget(self.direction_combo)
-        tools.addWidget(QLabel("סוג טקסט:"))
+        text_type_label = QLabel("סגנון"); text_type_label.setObjectName("muted"); tools.addWidget(text_type_label)
         self.heading_combo = QComboBox(); self.heading_combo.addItem("בחרו סגנון"); self.heading_combo.addItem("כותרת 1", "# "); self.heading_combo.addItem("כותרת 2", "## "); self.heading_combo.addItem("כותרת 3", "### "); self.heading_combo.addItem("טקסט רגיל", ""); tools.addWidget(self.heading_combo)
-        for label, callback in [("B מודגש", lambda: self.wrap("**", "**")), ("I נטוי", lambda: self.wrap("*", "*")), ("• רשימה", lambda: self.prefix("- ")), ("1. רשימה", lambda: self.prefix("1. ")), ("ציטוט", lambda: self.prefix("> ")), ("קישור", self.insert_link), ("תמונה", self.image_library_dialog), ("קו מפריד", self.insert_horizontal_rule), ("באתר RTL", lambda: self.wrap_website_direction("rtl")), ("באתר LTR", lambda: self.wrap_website_direction("ltr")), ("Mermaid", self.mermaid_block), ("קוד", lambda: self.wrap("`", "`")), ("בלוק קוד", self.code_block)]:
-            button = QPushButton(label); button.clicked.connect(callback); tools.addWidget(button)
-        tools.addStretch(); layout.addWidget(toolbar)
+        tools.addStretch()
+        formatting = QHBoxLayout(); formatting.setSpacing(6); toolbar_layout.addLayout(formatting)
+        for label, callback in [("B מודגש", lambda: self.wrap("**", "**")), ("I נטוי", lambda: self.wrap("*", "*")), ("• רשימה", lambda: self.prefix("- ")), ("1. רשימה", lambda: self.prefix("1. ")), ("ציטוט", lambda: self.prefix("> ")), ("קישור", self.insert_link), ("תמונה", self.image_library_dialog), ("קו", self.insert_horizontal_rule), ("RTL", lambda: self.wrap_website_direction("rtl")), ("LTR", lambda: self.wrap_website_direction("ltr")), ("Mermaid", self.mermaid_block), ("קוד", lambda: self.wrap("`", "`")), ("בלוק קוד", self.code_block)]:
+            button = QPushButton(label); button.clicked.connect(callback)
+            formatting.addWidget(button)
+        formatting.addStretch(); layout.addWidget(toolbar)
         self.body = QPlainTextEdit(); self.body.setPlaceholderText("כתבו כאן את תוכן השיעור ב-Markdown…"); self.apply_editor_content_font(); self.direction_combo.currentIndexChanged.connect(self.set_body_direction); self.heading_combo.currentIndexChanged.connect(self.apply_heading); self.set_body_direction(); layout.addWidget(self.body, 1)
         for field in (self.title_edit, self.filename_edit, self.body): field.textChanged.connect(self.update_dirty_state)
         actions = QHBoxLayout()
-        for label, callback, object_name in [("הדבק", self.body.paste, ""), ("העתק", self.body.copy, ""), ("גזור", self.body.cut, ""), ("מחק עמוד", self.delete_page, "danger"), ("שמור ועדכן אתר", self.save_page, "save")]:
+        for label, callback, object_name in [("הדבק", self.body.paste, "subtle"), ("העתק", self.body.copy, "subtle"), ("גזור", self.body.cut, "subtle"), ("מחק עמוד", self.delete_page, "danger"), ("שמור ועדכן אתר", self.save_page, "save")]:
             button = QPushButton(label)
             if object_name: button.setObjectName(object_name)
             button.clicked.connect(callback); actions.addWidget(button)
@@ -168,15 +198,30 @@ class CyberLearnEditor(QMainWindow):
 
     def set_editor_font_size(self, size: int) -> None:
         self.editor_font_size = max(10, min(28, int(size)))
-        self.setStyleSheet(self._editor_style_template.replace("__EDITOR_FONT_SIZE__", str(self.editor_font_size)))
+        self.apply_interface_font_size()
         self.apply_editor_content_font()
         if hasattr(self, "editor_heading"):
-            self.editor_heading.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.65)}px;font-weight:700;color:#00d4ff")
-            self.sidebar_title.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.3)}px;font-weight:700;color:#ffd93d")
+            self.editor_heading.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.65)}px;font-weight:800;color:#f4fbff")
+            self.sidebar_title.setStyleSheet(f"font-size:{round(self.editor_font_size * 1.3)}px;font-weight:700;color:#f4fbff")
         try:
             self.editor_settings_path.write_text(json.dumps({"font_size": self.editor_font_size}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         except OSError as error:
             self.statusBar().showMessage(f"לא ניתן לשמור את גודל הטקסט: {error}")
+
+    def apply_interface_font_size(self) -> None:
+        """Scale every editor widget, including menus and dialogs, from one setting."""
+        app = QApplication.instance()
+        if app:
+            font = app.font()
+            # Application fonts are shared with Qt popups and controls.  Keep this
+            # one point-based; assigning a pixel-only font here makes some native
+            # controls attempt to set an invalid point size (-1).
+            font.setPointSize(max(8, round(self.editor_font_size * .75)))
+            app.setFont(font)
+        stylesheet = self._editor_style_template.replace("__EDITOR_FONT_SIZE__", str(self.editor_font_size))
+        stylesheet = stylesheet.replace("__SMALL_FONT_SIZE__", str(max(10, round(self.editor_font_size * .8))))
+        stylesheet = stylesheet.replace("__SECTION_FONT_SIZE__", str(round(self.editor_font_size * 1.3)))
+        self.setStyleSheet(stylesheet)
 
     def apply_editor_content_font(self) -> None:
         if not hasattr(self, "body"):
@@ -184,6 +229,13 @@ class CyberLearnEditor(QMainWindow):
         font = self.body.font()
         font.setPixelSize(self.editor_font_size)
         self.body.setFont(font)
+
+    def toggle_page_details(self) -> None:
+        """Collapse page metadata to make more vertical room for writing."""
+        expanded = self.page_details_form.isVisible()
+        self.page_details_form.setVisible(not expanded)
+        self.page_details_toggle.setText("⌄" if expanded else "⌃")
+        self.page_details_toggle.setToolTip("פתיחת פרטי העמוד" if expanded else "קיפול פרטי העמוד")
 
     def snapshot(self) -> str:
         return "\0".join((self.title_edit.text(), self.filename_edit.text(), self.folder_combo.currentText(), str(self.order_edit.value()), self.body.toPlainText()))
@@ -499,6 +551,33 @@ class CyberLearnEditor(QMainWindow):
 
     def write_site_texts(self, texts: dict[str, str]) -> None:
         temporary = self.site_text_path.with_suffix(".tmp"); temporary.write_text(json.dumps(texts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"); temporary.replace(self.site_text_path)
+        self.update_manifest(texts)
+
+    def update_manifest(self, texts: dict[str, str] | None = None) -> None:
+        """Create or refresh PWA identity fields while preserving custom manifest data."""
+        site_texts = texts or self.read_site_texts()
+        try:
+            current = json.loads(self.manifest_path.read_text(encoding="utf-8")) if self.manifest_path.exists() else {}
+            if not isinstance(current, dict):
+                current = {}
+            brand = (site_texts.get("brand_prefix", "") + site_texts.get("brand_accent", "")).strip() or "LearningSite"
+            current.update({
+                "name": site_texts.get("site_title", "LearningSite").strip() or "LearningSite",
+                "short_name": brand,
+                "description": site_texts.get("tagline", "").strip(),
+                "lang": "he",
+                "dir": "rtl",
+                "start_url": current.get("start_url") or "./",
+                "display": current.get("display") or "standalone",
+                "background_color": current.get("background_color") or "#081421",
+                "theme_color": current.get("theme_color") or "#081421",
+            })
+            temporary = self.manifest_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            temporary.replace(self.manifest_path)
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            if hasattr(self, "statusBar"):
+                self.statusBar().showMessage(f"לא ניתן לעדכן את manifest.webmanifest: {error}")
 
     def read_homepage(self) -> dict:
         """Read optional homepage settings; old projects intentionally default to off."""
@@ -561,11 +640,11 @@ class CyberLearnEditor(QMainWindow):
 
     def edit_site_texts(self) -> None:
         dialog = QDialog(self); dialog.setWindowTitle("הגדרות האתר"); dialog.resize(720, 760)
-        layout = QVBoxLayout(dialog); layout.addWidget(QLabel("שנו טקסטים, כותרות וגדלי פונטים באתר. השינויים נשמרים ב־site-texts.json."))
+        layout = QVBoxLayout(dialog); layout.addWidget(QLabel("שנו טקסטים, כותרות וגדלי פונטים באתר ובמסך הבית. השינויים נשמרים ב־site-texts.json."))
         form_widget = QWidget(); form = QFormLayout(form_widget); form.setLabelAlignment(Qt.AlignRight)
         texts, fields = self.read_site_texts(), {}
         labels = {
-            "site_title": "כותרת הדפדפן", "brand_prefix": "שם מותג — חלק ראשון", "brand_accent": "שם מותג — חלק מודגש", "brand_home_label": "תיאור קישור הבית", "tagline": "שורת תיאור עליונה", "menu_label": "כפתור תפריט נייד", "theme_light_label": "כפתור מצב בהיר", "theme_dark_label": "כפתור מצב כהה", "learning_path_label": "כותרת סרגל הצד", "navigation_label": "תיאור ניווט נגיש", "loading_content": "הודעת טעינת תכנים", "page_count": "מונה עמודים ({count})", "empty_title": "כותרת ללא תכנים", "empty_description": "הודעה ללא תכנים", "loading_page": "הודעת טעינת עמוד", "load_error_title": "כותרת שגיאת טעינה", "load_error_description": "הודעת שגיאת טעינה ({file})", "missing_index_title": "כותרת אינדקס חסר", "missing_index_description": "הודעת אינדקס חסר",
+            "site_title": "כותרת הדפדפן", "brand_prefix": "שם מותג — חלק ראשון", "brand_accent": "שם מותג — חלק מודגש", "brand_home_label": "תיאור קישור הבית", "tagline": "שורת תיאור עליונה", "menu_label": "כפתור תפריט נייד", "theme_light_label": "כפתור מצב בהיר", "theme_dark_label": "כפתור מצב כהה", "learning_path_label": "כותרת סרגל הצד", "navigation_label": "תיאור ניווט נגיש", "loading_content": "הודעת טעינת תכנים", "page_count": "מונה עמודים ({count})", "empty_title": "כותרת ללא תכנים", "empty_description": "הודעה ללא תכנים", "loading_page": "הודעת טעינת עמוד", "load_error_title": "כותרת שגיאת טעינה", "load_error_description": "הודעת שגיאת טעינה ({file})", "missing_index_title": "כותרת אינדקס חסר", "missing_index_description": "הודעת אינדקס חסר", "homepage_start_label": "עמוד הבית — כפתור התחלה", "homepage_categories_title": "עמוד הבית — כותרת קטגוריות", "homepage_featured_title": "עמוד הבית — כותרת מומלצים", "homepage_page_count": "עמוד הבית — מונה עמודים ({count})",
         }
         for key, label in labels.items():
             field = QLineEdit(texts[key]); field.setLayoutDirection(Qt.RightToLeft); field.setAlignment(Qt.AlignRight); fields[key] = field; form.addRow(label, field)
