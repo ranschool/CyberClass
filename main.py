@@ -14,7 +14,7 @@ from editor.content import ContentRepository
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QTextBlockFormat, QTextCursor
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QListWidget, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QSpinBox, QStatusBar, QTextBrowser, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QSpinBox, QStatusBar, QTextBrowser, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 ROOT_OPTION = "כללי (ללא תיקייה)"
 SITE_TEXT_DEFAULTS = {
@@ -81,6 +81,7 @@ class CyberLearnEditor(QMainWindow):
         self.images_dir = self.project / "public" / "assets" / "images"
         self.index_path = self.project / "public" / "content-index.json"
         self.site_text_path = self.project / "public" / "site-texts.json"
+        self.homepage_path = self.project / "public" / "homepage.json"
         self.editor_settings_path = self.project / ".editor-settings.json"
         self.current_file: Path | None = None
         self.repository = ContentRepository(self.project)
@@ -117,6 +118,7 @@ class CyberLearnEditor(QMainWindow):
         self.local_site_button = QPushButton("▶ פתח אתר מקומי"); self.local_site_button.clicked.connect(self.toggle_local_site); header_layout.addWidget(self.local_site_button)
         button = QPushButton("◉ החלפת סמל אתר"); button.clicked.connect(self.change_favicon); header_layout.addWidget(button)
         button = QPushButton("⚙ טקסטים קבועים באתר"); button.clicked.connect(self.edit_site_texts); header_layout.addWidget(button)
+        button = QPushButton("⌂ עמוד הבית"); button.clicked.connect(self.edit_homepage); header_layout.addWidget(button)
         button = QPushButton("✓ בדיקת האתר"); button.clicked.connect(self.validate_site); header_layout.addWidget(button)
         button = QPushButton("↻ רענון"); button.clicked.connect(self.refresh_with_guard); header_layout.addWidget(button); outer.addWidget(header)
         splitter = QSplitter(Qt.Horizontal); splitter.setLayoutDirection(Qt.RightToLeft)
@@ -497,6 +499,65 @@ class CyberLearnEditor(QMainWindow):
 
     def write_site_texts(self, texts: dict[str, str]) -> None:
         temporary = self.site_text_path.with_suffix(".tmp"); temporary.write_text(json.dumps(texts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"); temporary.replace(self.site_text_path)
+
+    def read_homepage(self) -> dict:
+        """Read optional homepage settings; old projects intentionally default to off."""
+        defaults = {"enabled": False, "title": "", "description": "", "startPage": "", "showCategories": True, "showPageCounts": True, "showFeatured": False, "featuredPages": []}
+        try:
+            saved = json.loads(self.homepage_path.read_text(encoding="utf-8"))
+            if not isinstance(saved, dict):
+                return defaults
+            result = defaults | {key: saved.get(key, value) for key, value in defaults.items()}
+            result["enabled"] = bool(result["enabled"])
+            result["showCategories"] = bool(result["showCategories"])
+            result["showPageCounts"] = bool(result["showPageCounts"])
+            result["showFeatured"] = bool(result["showFeatured"])
+            result["featuredPages"] = [str(path) for path in result["featuredPages"] if isinstance(path, str)] if isinstance(result["featuredPages"], list) else []
+            return result
+        except (OSError, ValueError, json.JSONDecodeError):
+            return defaults
+
+    def write_homepage(self, homepage: dict) -> None:
+        temporary = self.homepage_path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(homepage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(self.homepage_path)
+
+    def edit_homepage(self) -> None:
+        dialog = QDialog(self); dialog.setWindowTitle("עמוד הבית"); dialog.resize(660, 620)
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel("הגדירו מסך פתיחה אופציונלי. ההגדרות נשמרות ב־homepage.json ואינן עמוד Markdown."))
+        form = QFormLayout(); layout.addLayout(form)
+        settings = self.read_homepage()
+        enabled = QCheckBox("הפעל עמוד בית"); enabled.setChecked(settings["enabled"]); form.addRow(enabled)
+        title = QLineEdit(settings["title"]); title.setLayoutDirection(Qt.RightToLeft); form.addRow("כותרת ראשית", title)
+        description = QPlainTextEdit(settings["description"]); description.setFixedHeight(80); description.setLayoutDirection(Qt.RightToLeft); form.addRow("תיאור קצר", description)
+        page_options = self.repository.read_index()
+        start_page = QComboBox(); start_page.addItem("ללא עמוד התחל כאן", "")
+        for page in page_options:
+            start_page.addItem(f"{page.get('title', page['path'])} — {page['path']}", page["path"])
+        start_page.setCurrentIndex(max(0, start_page.findData(settings["startPage"]))); form.addRow("עמוד התחל כאן", start_page)
+        show_categories = QCheckBox("הצג קטגוריות ראשיות"); show_categories.setChecked(settings["showCategories"]); form.addRow(show_categories)
+        show_counts = QCheckBox("הצג מספר עמודים בכל קטגוריה"); show_counts.setChecked(settings["showPageCounts"]); form.addRow(show_counts)
+        show_featured = QCheckBox("הצג עמודים מומלצים"); show_featured.setChecked(settings["showFeatured"]); form.addRow(show_featured)
+        featured = QListWidget(); featured.setSelectionMode(QAbstractItemView.MultiSelection); featured.setMinimumHeight(150)
+        for page in page_options:
+            choice = QListWidgetItem(f"{page.get('title', page['path'])} — {page['path']}")
+            choice.setData(Qt.UserRole, page["path"])
+            choice.setSelected(page["path"] in settings["featuredPages"])
+            featured.addItem(choice)
+        form.addRow("בחירת עמודים מומלצים", featured)
+        dependent = [title, description, start_page, show_categories, show_counts, show_featured, featured]
+        def update_enabled(checked: bool) -> None:
+            for widget in dependent: widget.setEnabled(checked)
+            show_counts.setEnabled(checked and show_categories.isChecked())
+            featured.setEnabled(checked and show_featured.isChecked())
+        enabled.toggled.connect(update_enabled); show_categories.toggled.connect(lambda _checked: update_enabled(enabled.isChecked())); show_featured.toggled.connect(lambda _checked: update_enabled(enabled.isChecked())); update_enabled(enabled.isChecked())
+        actions = QHBoxLayout(); actions.addStretch(); cancel = QPushButton("ביטול"); save = QPushButton("שמור הגדרות"); save.setObjectName("save"); actions.addWidget(cancel); actions.addWidget(save); layout.addLayout(actions)
+        cancel.clicked.connect(dialog.reject)
+        def save_homepage() -> None:
+            self.write_homepage({"enabled": enabled.isChecked(), "title": title.text().strip(), "description": description.toPlainText().strip(), "startPage": str(start_page.currentData() or ""), "showCategories": show_categories.isChecked(), "showPageCounts": show_counts.isChecked(), "showFeatured": show_featured.isChecked(), "featuredPages": [featured.item(index).data(Qt.UserRole) for index in range(featured.count()) if featured.item(index).isSelected()]})
+            self.statusBar().showMessage("הגדרות עמוד הבית נשמרו."); dialog.accept()
+        save.clicked.connect(save_homepage); dialog.exec()
 
     def edit_site_texts(self) -> None:
         dialog = QDialog(self); dialog.setWindowTitle("הגדרות האתר"); dialog.resize(720, 760)

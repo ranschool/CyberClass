@@ -71,4 +71,8 @@ draft: false
 
 האתר כולל חיפוש מקומי (title/content/tags/description), תוכן עניינים, breadcrumbs, previous/next, 404 בטוח, ניווט מקלדת, מצב בהיר/כהה וממשק רספונסיבי. הוא גם PWA בסיסי עם service worker בעל cache versioning. ה־dependencies החיצוניות ב־CDN נעולות לגרסאות מדויקות.
 
+### עמוד בית אופציונלי
+
+בעורך לחצו על **⌂ עמוד הבית** כדי להפעיל ולהגדיר את מסך הפתיחה. ההגדרות נשמרות ב־`public/homepage.json`; אם הקובץ אינו קיים או שהאפשרות כבויה, האתר נשאר עם מסלול הפתיחה הקודם. הקטגוריות, מוני העמודים ורשימת העמודים לבחירה נלקחים מ־`content-index.json` שנבנה אוטומטית, ולכן מתעדכנים אחרי שמירה/פרסום, שינוי שם או שינוי מבנה התוכן.
+
 ל־Cloudflare Pages הגדירו את `public` בתור Root directory, ללא build command. לאחר עריכה: `git add .`, `git commit -m "Update content"`, `git push`.
