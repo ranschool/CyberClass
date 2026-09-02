@@ -36,20 +36,21 @@ class ContentRepository:
         ordered = [found.pop(item["path"]) for item in self.read_index() if item["path"] in found]
         return [*ordered, *(found[path] for path in sorted(found, key=str.casefold))]
 
-    def build_index(self, preferred_paths: list[str] | None = None, include_paths: list[str] | None = None) -> list[dict]:
+    def build_index(self, preferred_paths: list[str] | None = None, include_paths: list[str] | None = None, page_overrides: dict[str, dict] | None = None) -> list[dict]:
         files = {file.relative_to(self.content).as_posix(): file for file in self.content.rglob("*.md")}
         previous = {item["path"]: item for item in self.read_index()}
         paths = [path for path in (preferred_paths if preferred_paths is not None else [item["path"] for item in self.read_index()]) if path in files]
         paths.extend(path for path in (include_paths or []) if path in files and path not in paths)
         pages = []
         for order, path in enumerate(paths, 1):
-            file, old = files[path], previous.get(path, {})
+            file, old = files[path], {**previous.get(path, {}), **(page_overrides or {}).get(path, {})}
             parts = path.removesuffix(".md").split("/")
             pages.append({
                 "title": str(old.get("title") or self.title_from_markdown(file.read_text(encoding="utf-8"), file.stem)),
                 "slug": "/".join(parts),
                 "folder": " / ".join(parts[:-1]) or "כללי",
                 "path": path, "file": f"content/{path}", "order": order,
+                "show_toc": bool(old.get("show_toc", True)),
             })
         self.atomic_json(self.index_path, pages)
         self.atomic_json(self.public / "search-index.json", [

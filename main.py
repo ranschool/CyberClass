@@ -132,12 +132,12 @@ class CyberLearnEditor(QMainWindow):
         details_header = QHBoxLayout(); self.page_details_toggle = QPushButton("⌃"); self.page_details_toggle.setObjectName("details-toggle"); self.page_details_toggle.setFixedWidth(34); self.page_details_toggle.setToolTip("קיפול פרטי העמוד"); self.page_details_toggle.clicked.connect(self.toggle_page_details); details_header.addWidget(self.page_details_toggle)
         details_title = QLabel("פרטי העמוד"); details_title.setObjectName("section-title"); details_header.addWidget(details_title); details_header.addStretch(); details_layout.addLayout(details_header)
         self.page_details_form = QWidget(); form = QFormLayout(self.page_details_form); form.setLabelAlignment(Qt.AlignRight); form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        self.title_edit = QLineEdit(); self.filename_edit = QLineEdit(); self.folder_combo = QComboBox(); self.order_edit = QSpinBox(); self.order_edit.setRange(1, 9999); self.published_check = QCheckBox("פרסם עמוד זה באתר")
+        self.title_edit = QLineEdit(); self.filename_edit = QLineEdit(); self.folder_combo = QComboBox(); self.order_edit = QSpinBox(); self.order_edit.setRange(1, 9999); self.published_check = QCheckBox("פרסם עמוד זה באתר"); self.show_toc_check = QCheckBox("הצג תוכן עניינים אוטומטי")
         for field in (self.title_edit, self.filename_edit):
             field.setAlignment(Qt.AlignRight); field.setLayoutDirection(Qt.RightToLeft)
         self.folder_combo.setLayoutDirection(Qt.RightToLeft)
         folder_row = QWidget(); folders = QHBoxLayout(folder_row); folders.setContentsMargins(0, 0, 0, 0); folders.addWidget(self.folder_combo, 1)
-        form.addRow("כותרת", self.title_edit); form.addRow("מיקום בתיקיות", folder_row); form.addRow("שם הקובץ", self.filename_edit); form.addRow("סדר תצוגה", self.order_edit); form.addRow("פרסום", self.published_check); details_layout.addWidget(self.page_details_form)
+        form.addRow("כותרת", self.title_edit); form.addRow("מיקום בתיקיות", folder_row); form.addRow("שם הקובץ", self.filename_edit); form.addRow("סדר תצוגה", self.order_edit); form.addRow("פרסום", self.published_check); form.addRow("ניווט בעמוד", self.show_toc_check); details_layout.addWidget(self.page_details_form)
         edit = QFrame(); edit.setObjectName("editor-card"); layout = QVBoxLayout(edit); layout.setContentsMargins(15, 15, 15, 13); layout.setSpacing(10)
         layout.addWidget(details)
         toolbar = QFrame(); toolbar.setObjectName("toolbar"); toolbar_layout = QVBoxLayout(toolbar); toolbar_layout.setContentsMargins(10, 8, 10, 8); toolbar_layout.setSpacing(6)
@@ -154,6 +154,7 @@ class CyberLearnEditor(QMainWindow):
         formatting.addStretch(); layout.addWidget(toolbar)
         self.body = QPlainTextEdit(); self.body.setPlaceholderText("כתבו כאן את תוכן השיעור ב-Markdown…"); self.apply_editor_content_font(); self.direction_combo.currentIndexChanged.connect(self.set_body_direction); self.heading_combo.currentIndexChanged.connect(self.apply_heading); self.set_body_direction(); layout.addWidget(self.body, 1)
         for field in (self.title_edit, self.filename_edit, self.body): field.textChanged.connect(self.update_dirty_state)
+        self.published_check.checkStateChanged.connect(self.update_dirty_state); self.show_toc_check.checkStateChanged.connect(self.update_dirty_state)
         actions = QHBoxLayout()
         for label, callback, object_name in [("הדבק", self.body.paste, "subtle"), ("העתק", self.body.copy, "subtle"), ("גזור", self.body.cut, "subtle"), ("מחק עמוד", self.delete_page, "danger"), ("שמור ועדכן אתר", self.save_page, "save")]:
             button = QPushButton(label)
@@ -214,7 +215,7 @@ class CyberLearnEditor(QMainWindow):
         self.page_details_toggle.setToolTip("פתיחת פרטי העמוד" if expanded else "קיפול פרטי העמוד")
 
     def snapshot(self) -> str:
-        return "\0".join((self.title_edit.text(), self.filename_edit.text(), self.folder_combo.currentText(), str(self.order_edit.value()), self.body.toPlainText()))
+        return "\0".join((self.title_edit.text(), self.filename_edit.text(), self.folder_combo.currentText(), str(self.order_edit.value()), str(self.published_check.isChecked()), str(self.show_toc_check.isChecked()), self.body.toPlainText()))
 
     def update_dirty_state(self, *_args) -> None:
         if not self._loading_document:
@@ -231,7 +232,7 @@ class CyberLearnEditor(QMainWindow):
 
     def write_recovery(self) -> None:
         if not self.is_dirty() and self._clean_snapshot: return
-        data = {"path": self.current_file.relative_to(self.content_dir).as_posix() if self.current_file else None, "title": self.title_edit.text(), "filename": self.filename_edit.text(), "folder": self.selected_folder(), "order": self.order_edit.value(), "body": self.body.toPlainText()}
+        data = {"path": self.current_file.relative_to(self.content_dir).as_posix() if self.current_file else None, "title": self.title_edit.text(), "filename": self.filename_edit.text(), "folder": self.selected_folder(), "order": self.order_edit.value(), "published": self.published_check.isChecked(), "show_toc": self.show_toc_check.isChecked(), "body": self.body.toPlainText()}
         (self.project / ".editor-recovery.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
     def confirm_discard(self, action: str) -> bool:
@@ -419,13 +420,14 @@ class CyberLearnEditor(QMainWindow):
         if self.current_file and self.current_file.relative_to(self.content_dir).as_posix() != relative and not self.confirm_discard("מעבר לעמוד אחר"): return
         file = self.content_dir / relative; text = file.read_text(encoding="utf-8"); path = file.relative_to(self.content_dir); self.current_file = file
         self._loading_document = True
-        self.title_edit.setText(self.title_from_markdown(text, file.stem)); self.refresh_folder_options(path.parent.as_posix() if path.parent != Path(".") else ROOT_OPTION); self.filename_edit.setText(file.name); self.order_edit.setValue(self.display_position(relative)); self.published_check.setChecked(relative in self.index_paths()); self.body.setPlainText(text); self.set_body_direction(); self.statusBar().showMessage(f"עורכים: content/{path.as_posix()}")
+        entry = next((item for item in self.repository.read_index() if item["path"] == relative), {})
+        self.title_edit.setText(self.title_from_markdown(text, file.stem)); self.refresh_folder_options(path.parent.as_posix() if path.parent != Path(".") else ROOT_OPTION); self.filename_edit.setText(file.name); self.order_edit.setValue(self.display_position(relative)); self.published_check.setChecked(relative in self.index_paths()); self.show_toc_check.setChecked(bool(entry.get("show_toc", True))); self.body.setPlainText(text); self.set_body_direction(); self.statusBar().showMessage(f"עורכים: content/{path.as_posix()}")
         self._loading_document = False; self.mark_clean()
 
     def new_page(self) -> None:
         if self.current_file and not self.confirm_discard("יצירת עמוד חדש"): return
         self._loading_document = True
-        self.current_file = None; self.title_edit.clear(); self.filename_edit.setText("שיעור-חדש.md"); self.order_edit.setValue(len(self.index_paths()) + 1); self.refresh_folder_options(ROOT_OPTION); self.published_check.setChecked(False); self.body.setPlainText("# כותרת השיעור\n\nכתבו כאן את תוכן השיעור…\n"); self.set_body_direction(); self.title_edit.setFocus(); self.statusBar().showMessage("עמוד חדש — סמנו פרסום אם הוא מוכן להצגה באתר")
+        self.current_file = None; self.title_edit.clear(); self.filename_edit.setText("שיעור-חדש.md"); self.order_edit.setValue(len(self.index_paths()) + 1); self.refresh_folder_options(ROOT_OPTION); self.published_check.setChecked(False); self.show_toc_check.setChecked(True); self.body.setPlainText("# כותרת השיעור\n\nכתבו כאן את תוכן השיעור…\n"); self.set_body_direction(); self.title_edit.setFocus(); self.statusBar().showMessage("עמוד חדש — סמנו פרסום אם הוא מוכן להצגה באתר")
         self._loading_document = False; self.mark_clean()
 
     def set_body_direction(self, _index: int | None = None) -> None:
@@ -467,11 +469,11 @@ class CyberLearnEditor(QMainWindow):
             if self.published_check.isChecked():
                 published_paths = [path for path in published_paths if path != target_relative]
                 published_paths.insert(min(max(self.order_edit.value() - 1, 0), len(published_paths)), target_relative)
-            self.current_file = target; self.rebuild_index(published_paths); self.refresh_tree(); self.mark_clean(); self.statusBar().showMessage(f"נשמר: content/{target_relative}" + (" — פורסם באתר" if self.published_check.isChecked() else " — לא פורסם"))
+            self.current_file = target; self.rebuild_index(published_paths, {target_relative: {"show_toc": self.show_toc_check.isChecked()}}); self.refresh_tree(); self.mark_clean(); self.statusBar().showMessage(f"נשמר: content/{target_relative}" + (" — פורסם באתר" if self.published_check.isChecked() else " — לא פורסם"))
         except (OSError, ValueError) as error: QMessageBox.critical(self, "לא ניתן לשמור", str(error))
 
-    def rebuild_index(self, paths: list[str] | None = None) -> None:
-        self.repository.build_index(paths)
+    def rebuild_index(self, paths: list[str] | None = None, page_overrides: dict[str, dict] | None = None) -> None:
+        self.repository.build_index(paths, page_overrides=page_overrides)
 
     def write_index(self, pages: list[dict]) -> None:
         temporary = self.index_path.with_suffix(".tmp"); temporary.write_text(json.dumps(pages, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"); temporary.replace(self.index_path)
@@ -893,7 +895,7 @@ class CyberLearnEditor(QMainWindow):
         except (OSError, ValueError): return
         if QMessageBox.question(self, "שחזור טיוטה", "נמצאה טיוטה שלא נשמרה. לשחזר אותה?", QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes: return
         self._loading_document = True; self.current_file = self.content_dir / data["path"] if data.get("path") else None
-        self.title_edit.setText(data.get("title", "")); self.filename_edit.setText(data.get("filename", "שיעור-חדש.md")); self.refresh_folder_options(data.get("folder") or ROOT_OPTION); self.order_edit.setValue(int(data.get("order", 1))); self.body.setPlainText(data.get("body", "")); self._loading_document = False; self._clean_snapshot = ""; self.update_dirty_state(); self.statusBar().showMessage("הטיוטה שוחזרה — שמרו אותה כשתהיו מוכנים.")
+        self.title_edit.setText(data.get("title", "")); self.filename_edit.setText(data.get("filename", "שיעור-חדש.md")); self.refresh_folder_options(data.get("folder") or ROOT_OPTION); self.order_edit.setValue(int(data.get("order", 1))); self.published_check.setChecked(bool(data.get("published", False))); self.show_toc_check.setChecked(bool(data.get("show_toc", True))); self.body.setPlainText(data.get("body", "")); self._loading_document = False; self._clean_snapshot = ""; self.update_dirty_state(); self.statusBar().showMessage("הטיוטה שוחזרה — שמרו אותה כשתהיו מוכנים.")
 
     def validate_site(self) -> None:
         report = self.repository.validate(); dialog = QDialog(self); dialog.setWindowTitle("בדיקת האתר"); dialog.resize(760, 560); layout = QVBoxLayout(dialog)
