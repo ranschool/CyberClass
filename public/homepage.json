@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "title": "",
+  "description": "",
+  "startPage": "",
+  "showCategories": true,
+  "showPageCounts": true,
+  "showFeatured": false,
+  "featuredPages": []
+}

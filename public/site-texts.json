@@ -17,5 +17,13 @@
   "load_error_title": "לא הצלחנו לטעון את העמוד",
   "load_error_description": "ודאו שהקובץ {file} קיים, ושהאתר מופעל דרך שרת מקומי.",
   "missing_index_title": "חסר קובץ אינדקס",
-  "missing_index_description": "פתחו את תוכנת העורך ושמרו עמוד כדי ליצור את האינדקס אוטומטית."
+  "missing_index_description": "פתחו את תוכנת העורך ושמרו עמוד כדי ליצור את האינדקס אוטומטית.",
+  "navigation_default_expanded": "false",
+  "font_size_body": "18",
+  "font_size_h1": "56",
+  "font_size_h2": "29",
+  "font_size_h3": "21",
+  "font_size_sidebar": "16",
+  "font_size_sidebar_heading": "18",
+  "sidebar_spacing": "4"
 }

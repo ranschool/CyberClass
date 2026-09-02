@@ -24,20 +24,12 @@
     "order": 3
   },
   {
-    "title": "הנחיות לכתיבת תיק פרויקט בחלופה הגנת סייבר ומערכות הפעלה",
-    "slug": "Projects/הנחיות לכתיבת תיק פרויקט/הנחיות",
-    "folder": "Projects / הנחיות לכתיבת תיק פרויקט",
-    "path": "Projects/הנחיות לכתיבת תיק פרויקט/הנחיות.md",
-    "file": "content/Projects/הנחיות לכתיבת תיק פרויקט/הנחיות.md",
-    "order": 4
-  },
-  {
-    "title": "תנאים",
-    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים",
+    "title": "משתנים",
+    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים",
     "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
-    "path": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
-    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
-    "order": 5
+    "path": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
+    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
+    "order": 4
   },
   {
     "title": "לולאות",
@@ -45,6 +37,14 @@
     "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
     "path": "Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
     "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/לולאות.md",
+    "order": 5
+  },
+  {
+    "title": "תנאים",
+    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים",
+    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
+    "path": "Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
+    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/תנאים.md",
     "order": 6
   },
   {
@@ -144,11 +144,67 @@
     "order": 18
   },
   {
-    "title": "משתנים",
-    "slug": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים",
-    "folder": "Python / פרק 3 - משתנים תנאים ולולאות",
-    "path": "Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
-    "file": "content/Python/פרק 3 - משתנים תנאים ולולאות/משתנים.md",
+    "title": "הנחיות",
+    "slug": "Projects/תיק פרויקט/הנחיות",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/הנחיות.md",
+    "file": "content/Projects/תיק פרויקט/הנחיות.md",
     "order": 19
+  },
+  {
+    "title": "מבוא",
+    "slug": "Projects/תיק פרויקט/מבוא",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/מבוא.md",
+    "file": "content/Projects/תיק פרויקט/מבוא.md",
+    "order": 20
+  },
+  {
+    "title": "מבנה / ארכיטקטורה",
+    "slug": "Projects/תיק פרויקט/מבנה",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/מבנה.md",
+    "file": "content/Projects/תיק פרויקט/מבנה.md",
+    "order": 21
+  },
+  {
+    "title": "מימוש הפרויקט",
+    "slug": "Projects/תיק פרויקט/מימוש",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/מימוש.md",
+    "file": "content/Projects/תיק פרויקט/מימוש.md",
+    "order": 22
+  },
+  {
+    "title": "מדריך למשתמש",
+    "slug": "Projects/תיק פרויקט/מדריךמשתמש",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/מדריךמשתמש.md",
+    "file": "content/Projects/תיק פרויקט/מדריךמשתמש.md",
+    "order": 23
+  },
+  {
+    "title": "רפלקציה / סיכום אישי",
+    "slug": "Projects/תיק פרויקט/רפלקציה",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/רפלקציה.md",
+    "file": "content/Projects/תיק פרויקט/רפלקציה.md",
+    "order": 24
+  },
+  {
+    "title": "ביבליוגרפיה",
+    "slug": "Projects/תיק פרויקט/ביבליוגרפיה",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/ביבליוגרפיה.md",
+    "file": "content/Projects/תיק פרויקט/ביבליוגרפיה.md",
+    "order": 25
+  },
+  {
+    "title": "נספחים",
+    "slug": "Projects/תיק פרויקט/נספחים",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/נספחים.md",
+    "file": "content/Projects/תיק פרויקט/נספחים.md",
+    "order": 26
   }
 ]
