@@ -1,11 +1,20 @@
 [
   {
+    "title": "הנחיות",
+    "slug": "Projects/תיק פרויקט/הנחיות",
+    "folder": "Projects / תיק פרויקט",
+    "path": "Projects/תיק פרויקט/הנחיות.md",
+    "file": "content/Projects/תיק פרויקט/הנחיות.md",
+    "order": 1,
+    "show_toc": true
+  },
+  {
     "title": "מבוא",
     "slug": "Projects/תיק פרויקט/מבוא",
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מבוא.md",
     "file": "content/Projects/תיק פרויקט/מבוא.md",
-    "order": 1,
+    "order": 2,
     "show_toc": true
   },
   {
@@ -14,7 +23,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מבנה.md",
     "file": "content/Projects/תיק פרויקט/מבנה.md",
-    "order": 2,
+    "order": 3,
     "show_toc": true
   },
   {
@@ -23,7 +32,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מימוש.md",
     "file": "content/Projects/תיק פרויקט/מימוש.md",
-    "order": 3,
+    "order": 4,
     "show_toc": true
   },
   {
@@ -32,7 +41,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/מדריךמשתמש.md",
     "file": "content/Projects/תיק פרויקט/מדריךמשתמש.md",
-    "order": 4,
+    "order": 5,
     "show_toc": true
   },
   {
@@ -41,7 +50,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/רפלקציה.md",
     "file": "content/Projects/תיק פרויקט/רפלקציה.md",
-    "order": 5,
+    "order": 6,
     "show_toc": true
   },
   {
@@ -50,7 +59,7 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/ביבליוגרפיה.md",
     "file": "content/Projects/תיק פרויקט/ביבליוגרפיה.md",
-    "order": 6,
+    "order": 7,
     "show_toc": true
   },
   {
@@ -59,15 +68,6 @@
     "folder": "Projects / תיק פרויקט",
     "path": "Projects/תיק פרויקט/נספחים.md",
     "file": "content/Projects/תיק פרויקט/נספחים.md",
-    "order": 7,
-    "show_toc": true
-  },
-  {
-    "title": "הנחיות",
-    "slug": "Projects/תיק פרויקט/הנחיות",
-    "folder": "Projects / תיק פרויקט",
-    "path": "Projects/תיק פרויקט/הנחיות.md",
-    "file": "content/Projects/תיק פרויקט/הנחיות.md",
     "order": 8,
     "show_toc": true
   }
