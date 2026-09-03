@@ -49,6 +49,7 @@ SITE_TEXT_DEFAULTS = {
     "font_size_sidebar_heading": "18",
     "sidebar_spacing": "4",
     "navigation_default_expanded": "true",
+    "header_icon_path": "",
 }
 
 
@@ -114,7 +115,7 @@ class CyberLearnEditor(QMainWindow):
         self.editor_font_size_control = QSpinBox(); self.editor_font_size_control.setRange(10, 28); self.editor_font_size_control.setSuffix(" px"); self.editor_font_size_control.setValue(self.editor_font_size); self.editor_font_size_control.setToolTip("גודל כל הטקסטים בעורך"); self.editor_font_size_control.valueChanged.connect(self.set_editor_font_size); header_layout.addWidget(self.editor_font_size_control)
         self.local_site_button = QPushButton("▶ תצוגת אתר"); self.local_site_button.setObjectName("subtle"); self.local_site_button.clicked.connect(self.toggle_local_site); header_layout.addWidget(self.local_site_button)
         settings = QPushButton("הגדרות אתר"); settings.setObjectName("subtle")
-        settings_menu = QMenu(settings); site_text_action = settings_menu.addAction("טקסטים, פונטים וניווט"); site_text_action.triggered.connect(self.edit_site_texts); home_action = settings_menu.addAction("עמוד הבית"); home_action.triggered.connect(self.edit_homepage); icon_action = settings_menu.addAction("החלפת סמל אתר"); icon_action.triggered.connect(self.change_favicon); settings.setMenu(settings_menu); header_layout.addWidget(settings)
+        settings_menu = QMenu(settings); site_text_action = settings_menu.addAction("טקסטים, פונטים וניווט"); site_text_action.triggered.connect(self.edit_site_texts); home_action = settings_menu.addAction("עמוד הבית"); home_action.triggered.connect(self.edit_homepage); icon_action = settings_menu.addAction("החלפת סמל אתר"); icon_action.triggered.connect(self.change_favicon); reset_icon_action = settings_menu.addAction("החזרת סמל האתר לברירת המחדל"); reset_icon_action.triggered.connect(self.reset_favicon); settings.setMenu(settings_menu); header_layout.addWidget(settings)
         button = QPushButton("✓ בדיקה"); button.setObjectName("subtle"); button.clicked.connect(self.validate_site); header_layout.addWidget(button)
         button = QPushButton("↻"); button.setObjectName("subtle"); button.setToolTip("רענון עץ התוכן"); button.clicked.connect(self.refresh_with_guard); header_layout.addWidget(button); outer.addWidget(header)
         splitter = QSplitter(Qt.Horizontal); splitter.setLayoutDirection(Qt.RightToLeft)
@@ -380,9 +381,16 @@ class CyberLearnEditor(QMainWindow):
             self.tree.setCurrentItem(item); self.tree.scrollToItem(item)
 
     def set_selected_publication(self, published: bool) -> None:
-        selected_paths = [str(item.data(0, Qt.UserRole)) for item in self.tree.selectedItems() if item.data(0, Qt.UserRole)]
+        # A folder selection represents every Markdown page below it, recursively.
+        # ``tree_item_paths`` already resolves both a page item and a folder item,
+        # so the same action also supports mixed selections without duplicating pages.
+        selected_paths = list(dict.fromkeys(
+            path
+            for item in self.tree.selectedItems()
+            for path in self.tree_item_paths(item)
+        ))
         if not selected_paths:
-            self.statusBar().showMessage("בחרו עמוד אחד או יותר לפרסום."); return
+            self.statusBar().showMessage("בחרו עמוד או תיקייה שמכילים עמודים לפרסום."); return
         paths = self.index_paths()
         if published:
             paths.extend(path for path in selected_paths if path not in paths)
@@ -469,7 +477,7 @@ class CyberLearnEditor(QMainWindow):
             if self.published_check.isChecked():
                 published_paths = [path for path in published_paths if path != target_relative]
                 published_paths.insert(min(max(self.order_edit.value() - 1, 0), len(published_paths)), target_relative)
-            self.current_file = target; self.rebuild_index(published_paths, {target_relative: {"show_toc": self.show_toc_check.isChecked()}}); self.refresh_tree(); self.mark_clean(); self.statusBar().showMessage(f"נשמר: content/{target_relative}" + (" — פורסם באתר" if self.published_check.isChecked() else " — לא פורסם"))
+            self.current_file = target; self.rebuild_index(published_paths, {target_relative: {"title": title, "show_toc": self.show_toc_check.isChecked()}}); self.refresh_tree(); self.mark_clean(); self.statusBar().showMessage(f"נשמר: content/{target_relative}" + (" — פורסם באתר" if self.published_check.isChecked() else " — לא פורסם"))
         except (OSError, ValueError) as error: QMessageBox.critical(self, "לא ניתן לשמור", str(error))
 
     def rebuild_index(self, paths: list[str] | None = None, page_overrides: dict[str, dict] | None = None) -> None:
@@ -486,8 +494,12 @@ class CyberLearnEditor(QMainWindow):
             return SITE_TEXT_DEFAULTS.copy()
 
     def write_site_texts(self, texts: dict[str, str]) -> None:
-        temporary = self.site_text_path.with_suffix(".tmp"); temporary.write_text(json.dumps(texts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"); temporary.replace(self.site_text_path)
-        self.update_manifest(texts)
+        # Keep editor-managed settings that are not exposed as text fields, such
+        # as the optional custom header icon selected through the favicon dialog.
+        saved = self.read_site_texts()
+        saved.update({key: str(value) for key, value in texts.items()})
+        temporary = self.site_text_path.with_suffix(".tmp"); temporary.write_text(json.dumps(saved, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"); temporary.replace(self.site_text_path)
+        self.update_manifest(saved)
 
     def update_manifest(self, texts: dict[str, str] | None = None) -> None:
         """Create or refresh PWA identity fields while preserving custom manifest data."""
@@ -736,7 +748,6 @@ class CyberLearnEditor(QMainWindow):
         assets_dir = self.project / "public" / "assets"
         target = assets_dir / f"favicon{suffix}"
         index_file = self.project / "public" / "index.html"
-        manifest_file = self.project / "public" / "manifest.webmanifest"
         try:
             if source.resolve() != target.resolve():
                 shutil.copy2(source, target)
@@ -747,17 +758,48 @@ class CyberLearnEditor(QMainWindow):
                 updated_html = updated_html.replace('<link rel="manifest" href="manifest.webmanifest" />', f'<link rel="manifest" href="manifest.webmanifest" />\n    {icon_link}')
             index_file.write_text(updated_html, encoding="utf-8")
 
-            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-            manifest["icons"] = [{"src": f"assets/{target.name}", "sizes": "any", "type": mime_types[suffix]}]
-            manifest_file.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             for old_suffix in mime_types:
                 old_icon = assets_dir / f"favicon{old_suffix}"
                 if old_icon != target and old_icon.exists():
                     old_icon.unlink()
+            site_texts = self.read_site_texts()
+            site_texts["header_icon_path"] = f"assets/{target.name}"
+            self.write_site_texts(site_texts)
         except (OSError, ValueError, json.JSONDecodeError) as error:
             QMessageBox.critical(self, "סמל אתר", f"לא ניתן לעדכן את סמל האתר:\n{error}")
             return
         self.statusBar().showMessage(f"סמל האתר עודכן: assets/{target.name}")
+
+    def reset_favicon(self) -> None:
+        """Restore the bundled favicon and the default header ``</>`` mark."""
+        if QMessageBox.question(self, "החזרת סמל אתר", "להחזיר את סמל האתר לברירת המחדל? הסמל האישי יוסר.", QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+            return
+        assets_dir = self.project / "public" / "assets"
+        default_icon = assets_dir / "default-favicon.svg"
+        target = assets_dir / "favicon.svg"
+        index_file = self.project / "public" / "index.html"
+        try:
+            if not default_icon.is_file():
+                raise OSError("קובץ סמל ברירת המחדל חסר.")
+            shutil.copy2(default_icon, target)
+            for suffix in (".png", ".ico"):
+                custom_icon = assets_dir / f"favicon{suffix}"
+                if custom_icon.exists():
+                    custom_icon.unlink()
+            icon_link = '<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />'
+            index_html = index_file.read_text(encoding="utf-8")
+            updated_html, replacements = re.subn(r'<link rel="icon" href="assets/favicon\.(?:svg|png|ico)" type="[^"]+"\s*/?>', icon_link, index_html, count=1)
+            if not replacements:
+                updated_html = updated_html.replace('<link rel="manifest" href="manifest.webmanifest" />', f'<link rel="manifest" href="manifest.webmanifest" />\n    {icon_link}')
+            index_file.write_text(updated_html, encoding="utf-8")
+            site_texts = self.read_site_texts()
+            site_texts["header_icon_path"] = ""
+            self.write_site_texts(site_texts)
+        except OSError as error:
+            QMessageBox.critical(self, "סמל אתר", f"לא ניתן להחזיר את סמל ברירת המחדל:\n{error}")
+            return
+        self.statusBar().showMessage("סמל האתר הוחזר לברירת המחדל.")
+
     def insert_image_reference(self, image: Path) -> bool:
         relative = image.relative_to(self.images_dir).as_posix()
         alt_text, accepted = QInputDialog.getText(self, "תיאור תמונה", "תיאור חלופי לתמונה:", text=image.stem)
